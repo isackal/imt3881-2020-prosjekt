@@ -4,3 +4,4 @@
 *.log
 *.out
 .vscode/
+__pycache__
