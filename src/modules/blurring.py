@@ -21,7 +21,7 @@ def blurring(img, n, alpha):
     Returns
     -------
     np.ndarray
-        Image with amplified contrast
+        Blurred image
     """
     new_img = img.astype(float) / 255
 
