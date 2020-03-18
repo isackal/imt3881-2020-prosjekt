@@ -4,6 +4,7 @@
 *.log
 *.out
 .vscode/
+.venv/
 __pycache__
 .coverage
 htmlcov/
