@@ -2,14 +2,12 @@ import modifiers as md
 import numpy as np
 
 
-def contrast(img, n, k, alpha):
+def blurring(img, n, alpha):
     """
-    Amlpifies the contrast in the picture
+    Blurs the image
 
-    Finds the same picture with an amplified gradient.
-    Alpha should not be higher than 0.25 to prevent numeric
-    instability. A high k value will also cause a lot of
-    noise.
+    Alpha should remain below 0.25 to prevent numeric
+    instablilty.
 
     Paramters
     ---------
@@ -17,8 +15,6 @@ def contrast(img, n, k, alpha):
         Source image
     n : int
         Number of iterations
-    k : float
-        Steepness of the new gradient (default = 5)
     alpha : float
         delta_t / delta_x**2 (default = 0.25)
 
@@ -28,11 +24,6 @@ def contrast(img, n, k, alpha):
         Image with amplified contrast
     """
     new_img = img.astype(float) / 255
-    laplace_0 = (new_img[2:, 1:-1] +
-                 new_img[:-2, 1:-1] +
-                 new_img[1:-1, 2:] +
-                 new_img[1:-1, :-2] -
-                 4 * new_img[1:-1, 1:-1])
 
     for i in range(n):
         laplace = (new_img[2:, 1:-1] +
@@ -41,23 +32,25 @@ def contrast(img, n, k, alpha):
                    new_img[1:-1, :-2] -
                    4 * new_img[1:-1, 1:-1])
 
-        new_img[1:-1, 1:-1] += alpha * (laplace - k * laplace_0)
+        new_img[1:-1, 1:-1] += alpha * laplace
 
-    # Trim values outside scope
-    new_img[new_img > 1] = 1
-    new_img[new_img < 0] = 0
+        # Neumann boundary condition du/dt = 0
+        new_img[0, :] = new_img[1, :]
+        new_img[-1, :] = new_img[-2, :]
+        new_img[:, 0] = new_img[:, 1]
+        new_img[:, -1] = new_img[:, -2]
 
     return (new_img * 255).astype(np.uint8)
 
 
-class Contrast(md.Modifier):
+class Blurring(md.Modifier):
     def __init__(self):
         super().__init__()
-        self.name = "Contrast"
-        self.function = contrast
+        self.name = "Blurring"
+        self.function = blurring
         self.params = [
             ("img", np.ndarray, None),
             ("iterations", int, None),
-            ("steepness", float, 5.0),
             ("alpha", float, 0.25)
         ]
+        self.initDefaultValues()
