@@ -14,7 +14,7 @@ def blurring(img, n, alpha):
     img : np.ndarray
         Source image
     n : int
-        Number of iterations
+        Number of iterations (default = 10)
     alpha : float
         delta_t / delta_x**2 (default = 0.25)
 
@@ -50,7 +50,7 @@ class Blurring(md.Modifier):
         self.function = blurring
         self.params = [
             ("img", np.ndarray, None),
-            ("iterations", int, None),
+            ("iterations", int, 10),
             ("alpha", float, 0.25)
         ]
         self.initDefaultValues()

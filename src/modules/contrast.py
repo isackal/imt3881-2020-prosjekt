@@ -16,7 +16,7 @@ def contrast(img, n, k, alpha):
     img : np.ndarray
         Source image
     n : int
-        Number of iterations
+        Number of iterations (default = 10)
     k : float
         Steepness of the new gradient (default = 5)
     alpha : float
@@ -57,7 +57,7 @@ class Contrast(md.Modifier):
         self.function = contrast
         self.params = [
             ("img", np.ndarray, None),
-            ("iterations", int, None),
+            ("iterations", int, 10),
             ("steepness", float, 5.0),
             ("alpha", float, 0.25)
         ]
