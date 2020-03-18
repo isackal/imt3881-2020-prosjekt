@@ -2,7 +2,7 @@ import numpy as np
 import modifiers as md
 
 
-def diffusion(y):
+def diffusjon(y):
     """
     Kjører diffusjon inn i regionen som ønskes inpainted
 
@@ -20,10 +20,10 @@ def diffusion(y):
     np.ndarray
         regionen etter en diffusjon
     """
-    return 0.49*(y[2]-2*y[1]+y[0])
+    return 0.24*(y[0]+y[1]+y[2]+y[3]-4*y[4])
 
 
-def inpaint(img, depth, masks):
+def inpaint(img, depth, mask):
     """
     Inpainter en valgt region av et bilde
 
@@ -36,17 +36,30 @@ def inpaint(img, depth, masks):
         antall ganger diffusjonsligningen skal kjøres på bilde.
         Tallet ganges med 100 da en diffusjon utgjør liten forrandring
 
-    masks : np.ndarray(boolean)
-        3 masker med litt forskjellige views rund regionen som skal innpaintes.
+    masks : np.ndarray
+         Maske over regionen som skal innpaintes.
     """
-    for i in range(len(masks)):
-        # convert masks into boolean masks for np.ndarray view compatability
-        masks[i] = masks[i].astype(bool)
-
-    for i in range(100*depth):
-        views = np.array([img[masks[0]], img[masks[1]], img[masks[2]]])
-        img[masks[1]] += diffusion(views)
-    return img
+    # Potential improvements: enable non-square masks
+    # Track every pixel that is true in mask ndarray and diffuse that
+    img = img.astype(float) / 255
+    maskCords = np.argwhere(mask)
+    left = maskCords[0][1]
+    right = maskCords[-1][1]
+    top = maskCords[0][0]
+    bottom = maskCords[-1][0]
+    size = img.shape
+    i = 0
+    while i < depth*100:
+        i += 1
+        views = np.array([
+            img[top:bottom, max(1, left-1):right-1],
+            img[top:bottom, left+1:min(size[1]-1, right+1)],
+            img[max(1, top-1):bottom-1, left:right],
+            img[top+1:min(size[0]-1, bottom+1), left:right],
+            img[top:bottom, left:right]
+            ])
+        img[top:bottom, left:right] += diffusjon(views)
+    return (img * 255).astype(np.uint8)
 
 
 class Inpaint(md.Modifier):
@@ -58,21 +71,6 @@ class Inpaint(md.Modifier):
         self.params = [
             ("source", np.ndarray, None),
             ("depth", int, 1),
-            ("masks", list, None)
+            ("mask", np.ndarray, None)
         ]
         self.initDefaultValues()
-
-
-# Default values saved for possible later testing useage
-"""
-if __name__ == "__main__":
-    u = imageio.imread('../IOD.png').astype(float)/255
-    masks = []
-    masks.append(np.zeros((u.shape[0], u.shape[1])).astype(bool))
-    masks.append(np.zeros((u.shape[0], u.shape[1])).astype(bool))
-    masks.append(np.zeros((u.shape[0], u.shape[1])).astype(bool))
-    masks[0][45:75, 66:96] = True
-    masks[1][45:75, 67:97] = True
-    masks[2][45:75, 68:98] = True
-    inpaint(u, 5, masks)
-"""
