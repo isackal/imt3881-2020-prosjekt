@@ -7,6 +7,8 @@ import numpy as np
 import scipy as sp
 import imageio as im
 import modules.bitcrusher as bitcrusher
+import modules.contrast as contrast
+import modules.blurring as blurring
 
 #TODO 2.9
 
@@ -74,6 +76,7 @@ class TypeInput(wd.QLineEdit):
         try:
             val=self._type( self.text() )
         except:
+            print(self.text(),self._type)
             val=0
         return val
 
@@ -96,7 +99,7 @@ class ModifierWidget(Collapser):
         self.modifier.values[0]=self.img.picdata
         for param in self.modifier.params[1:]:
             lbl=wd.QLabel(param[0],self)
-            inp=TypeInput(self,int)
+            inp=TypeInput(self,param[1])
             inp.setText(str(param[2]))
             inp.textEdited.connect(self.onUpdateText)
             inp.dtatp=param[1]
@@ -280,8 +283,8 @@ class imageFrame( wd.QWidget ):
             if SELECTED is not None:
                 SELECTED.widgetPipeline.toggleOff()
             self.bigImg.disconnectParent()
-            self.widgetPipeline.at.img.connect(self.bigImg)
-            self.widgetPipeline.at.img.pipe()
+            self.widgetPipeline.at.connect(self.bigImg)
+            self.widgetPipeline.at.pipe()
             self.parent.update_on_command()
             self.widgetPipeline.toggleOn()
             SELECTED=self
@@ -398,7 +401,8 @@ class PipelineWidget(wd.QFrame):
     def addModifier(self,modifier):
         c1=ModifierWidget(self,modifier,self.at)
         self.pipes.append(c1)
-        self.at=c1
+        print("$///7")
+        self.at=c1.img
         self.playout.addWidget(c1)
     def toggle(self):
         if self.visible:
@@ -511,7 +515,10 @@ class Window(wd.QDialog):
         self.images.append( _add )
         self.imagesSection.addWidget( _add )
         pl=PipelineWidget(self,_add)
-        pl.addModifier(bitcrusher.Bitcrusher)
+        #pl.addModifier(bitcrusher.Bitcrusher)
+        pl.addModifier( blurring.Blurring )
+        pl.addModifier( contrast.Contrast )
+        pl.addModifier( bitcrusher.Bitcrusher )
         self.sp4.addWidget(pl)
         _add.selectThis()
 
