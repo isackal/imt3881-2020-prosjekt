@@ -61,3 +61,4 @@ class Contrast(md.Modifier):
             ("steepness", float, 5.0),
             ("alpha", float, 0.25)
         ]
+        self.initDefaultValues()
