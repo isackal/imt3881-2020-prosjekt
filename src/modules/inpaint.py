@@ -1,6 +1,9 @@
 import numpy as np
 import modifiers as md
 
+import imageio
+import matplotlib.pyplot as plt
+
 
 def diffusjon(y):
     """
@@ -43,27 +46,34 @@ def inpaint(img, depth, mask):
     # Track every pixel that is true in mask ndarray and diffuse that
     img = img.astype(float) / 255
     maskCords = np.argwhere(mask)
-    left = maskCords[0][1]
-    right = maskCords[-1][1]
-    top = maskCords[0][0]
-    bottom = maskCords[-1][0]
     size = img.shape
-    i = 0
-    while i < depth*100:
-        i += 1
-        views = np.array([
-            img[top:bottom, max(1, left-1):right-1],
-            img[top:bottom, left+1:min(size[1]-1, right+1)],
-            img[max(1, top-1):bottom-1, left:right],
-            img[top+1:min(size[0]-1, bottom+1), left:right],
-            img[top:bottom, left:right]
-            ])
-        img[top:bottom, left:right] += diffusjon(views)
+
+    #   Generate view of image around inpaint region
+    top = max(1, np.amin(maskCords[:, 0]))
+    bottom = min(size[1]-1, np.amax(maskCords[:, 0]))
+    left = max(1, np.amin(maskCords[:, 1]))
+    right = min(size[0]-1, np.amax(maskCords[:, 1]))
+    view = img[top:bottom, left:right]
+
+    #   Generate diffrent views for diffusion. [top:bottom, left:right]
+    mask = mask[top:bottom, left:right].astype(bool)
+    lmask = np.roll(mask, -1, axis=0)
+    rmask = np.roll(mask, 1, axis=0)
+    tmask = np.roll(mask, -1, axis=1)
+    bmask = np.roll(mask, 1, axis=1)
+
+    print(mask.shape)
+
+    for i in range(depth*100):
+        a = view[lmask] + view[rmask] + view[tmask] + view[bmask] - 4*view[mask]
+        view[mask] += a*0.24
+
+    img[top:bottom, left:right] = view
     return (img * 255).astype(np.uint8)
 
 
 class Inpaint(md.Modifier):
-    # read usage in ../modifiers.py
+    #   read usage in ../modifiers.py
     def __init__(self):
         super().__init__()
         self.name = "Inpaint"
@@ -74,3 +84,12 @@ class Inpaint(md.Modifier):
             ("mask", np.ndarray, None)
         ]
         self.initDefaultValues()
+
+
+if __name__ == "__main__":
+    img = imageio.imread('../../test2.png')
+    mask = np.zeros((img.shape[0], img.shape[1]))
+    mask[55:85, 200:225] = 1
+    new_img = inpaint(img, 5, mask)
+    plt.imshow(new_img)
+    plt.show(block=True)
