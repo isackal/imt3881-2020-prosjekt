@@ -1,6 +1,10 @@
 import numpy as np
 import modifiers as md
 
+#   Brukt for testfunksjon. Slett ved endelig release
+import imageio
+import matplotlib.pyplot as plt
+
 
 def diffusjon(y):
     """
@@ -39,31 +43,42 @@ def inpaint(img, depth, mask):
     masks : np.ndarray
          Maske over regionen som skal innpaintes.
     """
-    # Potential improvements: enable non-square masks
-    # Track every pixel that is true in mask ndarray and diffuse that
     img = img.astype(float) / 255
+    mask = mask.astype(bool)
     maskCords = np.argwhere(mask)
-    left = maskCords[0][1]
-    right = maskCords[-1][1]
-    top = maskCords[0][0]
-    bottom = maskCords[-1][0]
     size = img.shape
-    i = 0
-    while i < depth*100:
-        i += 1
+
+    #   Lag et view av regionen som skal innpaintes
+    top = max(2, np.amin(maskCords[:, 0])) - 1
+    bottom = min(size[1]-3, np.amax(maskCords[:, 0])) + 2
+    left = max(2, np.amin(maskCords[:, 1])) - 1
+    right = min(size[0]-3, np.amax(maskCords[:, 1])) + 2
+
+    view = img[top:bottom, left:right]
+    viewMask = mask[top:bottom, left:right]
+
+    #   Lag forskjellige masker for view regionen
+    t_viewMask = np.roll(viewMask, -1, axis=0)
+    b_viewMask = np.roll(viewMask, 1, axis=0)
+    l_viewMask = np.roll(viewMask, -1, axis=1)
+    r_viewMask = np.roll(viewMask, 1, axis=1)
+
+    #   Diffuser fargene rundt regionen inn i regionen
+    for i in range(depth*100):
         views = np.array([
-            img[top:bottom, max(1, left-1):right-1],
-            img[top:bottom, left+1:min(size[1]-1, right+1)],
-            img[max(1, top-1):bottom-1, left:right],
-            img[top+1:min(size[0]-1, bottom+1), left:right],
-            img[top:bottom, left:right]
-            ])
-        img[top:bottom, left:right] += diffusjon(views)
+            view[t_viewMask],
+            view[b_viewMask],
+            view[l_viewMask],
+            view[r_viewMask],
+            view[viewMask]
+        ])
+        view[viewMask] += diffusjon(views)
+
     return (img * 255).astype(np.uint8)
 
 
 class Inpaint(md.Modifier):
-    # read usage in ../modifiers.py
+    #   read usage in ../modifiers.py
     def __init__(self):
         super().__init__()
         self.name = "Inpaint"
@@ -74,3 +89,21 @@ class Inpaint(md.Modifier):
             ("mask", np.ndarray, None)
         ]
         self.initDefaultValues()
+
+
+#   Testfunksjon. Slett ved endelig release
+if __name__ == "__main__":
+    img = imageio.imread('../../test2.png')
+    mask = np.zeros((img.shape[0], img.shape[1]))
+    mask[55:58, 207:213] = 1
+    mask[58:61, 205:215] = 1
+    mask[61:64, 203:218] = 1
+    mask[64:68, 201:221] = 1
+    mask[68:82, 200:225] = 1
+    mask[82:85, 201:221] = 1
+    mask[85:88, 203:218] = 1
+    mask[88:91, 205:215] = 1
+    mask[91:94, 207:213] = 1
+    new_img = inpaint(img, 5, mask)
+    plt.imshow(new_img)
+    plt.show(block=True)
