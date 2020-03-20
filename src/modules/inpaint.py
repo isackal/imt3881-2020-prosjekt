@@ -1,6 +1,7 @@
 import numpy as np
 import modifiers as md
 
+#   Brukt for testfunksjon. Slett ved endelig release
 import imageio
 import matplotlib.pyplot as plt
 
@@ -42,33 +43,37 @@ def inpaint(img, depth, mask):
     masks : np.ndarray
          Maske over regionen som skal innpaintes.
     """
-    # Potential improvements: enable non-square masks
-    # Track every pixel that is true in mask ndarray and diffuse that
     img = img.astype(float) / 255
+    mask = mask.astype(bool)
     maskCords = np.argwhere(mask)
     size = img.shape
 
-    #   Generate view of image around inpaint region
-    top = max(1, np.amin(maskCords[:, 0]))
-    bottom = min(size[1]-1, np.amax(maskCords[:, 0]))
-    left = max(1, np.amin(maskCords[:, 1]))
-    right = min(size[0]-1, np.amax(maskCords[:, 1]))
+    #   Lag et view av regionen som skal innpaintes
+    top = max(2, np.amin(maskCords[:, 0])) - 1
+    bottom = min(size[1]-3, np.amax(maskCords[:, 0])) + 2
+    left = max(2, np.amin(maskCords[:, 1])) - 1
+    right = min(size[0]-3, np.amax(maskCords[:, 1])) + 2
+
     view = img[top:bottom, left:right]
+    viewMask = mask[top:bottom, left:right]
 
-    #   Generate diffrent views for diffusion. [top:bottom, left:right]
-    mask = mask[top:bottom, left:right].astype(bool)
-    lmask = np.roll(mask, -1, axis=0)
-    rmask = np.roll(mask, 1, axis=0)
-    tmask = np.roll(mask, -1, axis=1)
-    bmask = np.roll(mask, 1, axis=1)
+    #   Lag forskjellige masker for view regionen
+    t_viewMask = np.roll(viewMask, -1, axis=0)
+    b_viewMask = np.roll(viewMask, 1, axis=0)
+    l_viewMask = np.roll(viewMask, -1, axis=1)
+    r_viewMask = np.roll(viewMask, 1, axis=1)
 
-    print(mask.shape)
-
+    #   Diffuser fargene rundt regionen inn i regionen
     for i in range(depth*100):
-        a = view[lmask] + view[rmask] + view[tmask] + view[bmask] - 4*view[mask]
-        view[mask] += a*0.24
+        views = np.array([
+            view[t_viewMask],
+            view[b_viewMask],
+            view[l_viewMask],
+            view[r_viewMask],
+            view[viewMask]
+        ])
+        view[viewMask] += diffusjon(views)
 
-    img[top:bottom, left:right] = view
     return (img * 255).astype(np.uint8)
 
 
@@ -86,10 +91,19 @@ class Inpaint(md.Modifier):
         self.initDefaultValues()
 
 
+#   Testfunksjon. Slett ved endelig release
 if __name__ == "__main__":
     img = imageio.imread('../../test2.png')
     mask = np.zeros((img.shape[0], img.shape[1]))
-    mask[55:85, 200:225] = 1
+    mask[55:58, 207:213] = 1
+    mask[58:61, 205:215] = 1
+    mask[61:64, 203:218] = 1
+    mask[64:68, 201:221] = 1
+    mask[68:82, 200:225] = 1
+    mask[82:85, 201:221] = 1
+    mask[85:88, 203:218] = 1
+    mask[88:91, 205:215] = 1
+    mask[91:94, 207:213] = 1
     new_img = inpaint(img, 5, mask)
     plt.imshow(new_img)
     plt.show(block=True)
