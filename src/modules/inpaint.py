@@ -50,9 +50,9 @@ def inpaint(img, depth, mask):
 
     #   Lag et view av regionen som skal innpaintes
     top = max(2, np.amin(maskCords[:, 0])) - 1
-    bottom = min(size[1]-3, np.amax(maskCords[:, 0])) + 2
+    bottom = min(size[0]-3, np.amax(maskCords[:, 0])) + 2
     left = max(2, np.amin(maskCords[:, 1])) - 1
-    right = min(size[0]-3, np.amax(maskCords[:, 1])) + 2
+    right = min(size[1]-3, np.amax(maskCords[:, 1])) + 2
 
     view = img[top:bottom, left:right]
     viewMask = mask[top:bottom, left:right]
@@ -64,7 +64,7 @@ def inpaint(img, depth, mask):
     r_viewMask = np.roll(viewMask, 1, axis=1)
 
     #   Diffuser fargene rundt regionen inn i regionen
-    for i in range(depth*100):
+    for i in range(depth):
         views = np.array([
             view[t_viewMask],
             view[b_viewMask],
@@ -104,6 +104,6 @@ if __name__ == "__main__":
     mask[85:88, 203:218] = 1
     mask[88:91, 205:215] = 1
     mask[91:94, 207:213] = 1
-    new_img = inpaint(img, 5, mask)
+    new_img = inpaint(img, 15, mask)
     plt.imshow(new_img)
-    plt.show(block=True)
+    plt.show()
