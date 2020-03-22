@@ -24,7 +24,15 @@ def diffusjon(y):
     np.ndarray
         regionen etter en diffusjon
     """
-    return 0.24*(y[0]+y[1]+y[2]+y[3]-4*y[4])
+    #return 0.24*(y[0]+y[1]+y[2]+y[3]-4*y[4]) # Speiler
+    #return 0.24*y[0] # Speiler
+    #return 0.24*y[1] # Speiler
+    #return 0.24*y[2] # Speiler ikke
+    #return 0.24*y[3] # Speiler ikke
+    #return 0.24*y[4] # Speiler ikke
+    return 0.49*(y[0] + y[1] - 2 * y[2])
+    
+    
 
 
 def inpaint(img, depth, mask):
@@ -66,8 +74,8 @@ def inpaint(img, depth, mask):
     #   Diffuser fargene rundt regionen inn i regionen
     for i in range(depth):
         views = np.array([
-            view[t_viewMask],
-            view[b_viewMask],
+            #view[t_viewMask],
+            #view[b_viewMask],
             view[l_viewMask],
             view[r_viewMask],
             view[viewMask]
