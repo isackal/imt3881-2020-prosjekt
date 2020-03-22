@@ -2,7 +2,7 @@ import modifiers as md
 import numpy as np
 
 
-def blurring(img, n, alpha):
+def blurring(img, n, alpha, mask):
     """
     Blurs the image
 
@@ -23,16 +23,30 @@ def blurring(img, n, alpha):
     np.ndarray
         Blurred image
     """
+
     new_img = img.astype(float) / 255
+    centerMask = mask.astype(bool)
+
+    # Ensure blurring is not attempted directly on the boundary
+    centerMask[0:2, :] = False
+    centerMask[:, 0:2] = False
+    centerMask[-2:, :] = False
+    centerMask[:, -2:] = False
+
+    # Create diffrent views of blurring region for laplace
+    topMask = np.roll(centerMask, -1, axis=0)
+    botMask = np.roll(centerMask, 1, axis=0)
+    leftMask = np.roll(centerMask, -1, axis=0)
+    rightMask = np.roll(centerMask, 1, axis=1)
 
     for i in range(n):
-        laplace = (new_img[2:, 1:-1] +
-                   new_img[:-2, 1:-1] +
-                   new_img[1:-1, 2:] +
-                   new_img[1:-1, :-2] -
-                   4 * new_img[1:-1, 1:-1])
+        laplace = (new_img[topMask] +
+                   new_img[botMask] +
+                   new_img[leftMask] +
+                   new_img[rightMask] -
+                   4 * new_img[centerMask])
 
-        new_img[1:-1, 1:-1] += alpha * laplace
+        new_img[centerMask] += alpha * laplace
 
         # Neumann boundary condition du/dt = 0
         new_img[0, :] = new_img[1, :]
@@ -51,6 +65,7 @@ class Blurring(md.Modifier):
         self.params = [
             ("img", np.ndarray, None),
             ("iterations", int, 10),
-            ("alpha", float, 0.25)
+            ("alpha", float, 0.25),
+            ("mask", np.ndarray, None)
         ]
         self.initDefaultValues()
