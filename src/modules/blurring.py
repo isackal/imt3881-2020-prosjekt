@@ -26,11 +26,14 @@ def blurring(img, n, alpha, mask):
 
     new_img = img.astype(float) / 255
     centerMask = mask.astype(bool)
+
+    # Ensure blurring is not attempted directly on the boundary
     centerMask[0:2, :] = False
     centerMask[:, 0:2] = False
     centerMask[-2:, :] = False
     centerMask[:, -2:] = False
 
+    # Create diffrent views of blurring region for laplace
     topMask = np.roll(centerMask, -1, axis=0)
     botMask = np.roll(centerMask, 1, axis=0)
     leftMask = np.roll(centerMask, -1, axis=0)
