@@ -1,7 +1,7 @@
 import numpy as np
 import modifiers as md
 
-from inpaint import inpaint
+from modules.inpaint import inpaint
 
 #   Brukt for testfunksjon. Slett ved endelig release
 import imageio
@@ -14,9 +14,9 @@ def demosaic(red, green, blue):
     blueMask = ~blue.astype(bool)
     img = np.zeros((red.shape[0], red.shape[1], 3))
 
-    new_red = inpaint(red, 10, redMask)
-    new_green = inpaint(green, 10, greenMask)
-    new_blue = inpaint(blue, 10, blueMask)
+    new_red = inpaint(red, 1, redMask)
+    new_green = inpaint(green, 1, greenMask)
+    new_blue = inpaint(blue, 1, blueMask)
 
     # BUG: Rød og Blå lager tilfeldige kopier av ukjent grunn
     # Lager kopier av gresset og andre elementer den ikke burde legge til
