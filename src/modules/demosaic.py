@@ -1,6 +1,7 @@
 import numpy as np
 import modifiers as md
 
+from modules.inpaint import inpaint
 from modules.blurring import blurring
 
 #   Brukt for testfunksjon. Slett ved endelig release
@@ -14,17 +15,14 @@ def demosaic(red, green, blue):
     blueMask = ~blue.astype(bool)
     img = np.zeros((red.shape[0], red.shape[1], 3))
 
-    new_red = blurring(red, 80, 0.24, redMask)
-    new_green = blurring(green, 80, 0.24, greenMask)
-    new_blue = blurring(blue, 80, 0.24, blueMask)
+    new_red = inpaint(red, 50, redMask)
+    new_green = inpaint(green, 50, greenMask)
+    new_blue = inpaint(blue, 50, blueMask)
 
-
-    # BUG: Rød og Blå lager tilfeldige kopier av ukjent grunn
-    # Lager kopier av gresset og andre elementer den ikke burde legge til
     img[:, :, 0] = new_red
     img[:, :, 1] = new_green
-    # Lager kopier og speielde bilder av vaskebjørnen
     img[:, :, 2] = new_blue
+
     return img.astype(np.uint8)
 
 

@@ -31,3 +31,7 @@ class test_modul(unittest.TestCase):
         self.green = self.green.astype(np.uint8)
 
         self.img = demosaic(self.red, self.blue, self.green)
+        print(self.img)
+        self.img = self.img.astype(bool)
+        nonDemosaic = np.argwhere(self.img)
+        self.assertTrue(nonDemosaic.all())
