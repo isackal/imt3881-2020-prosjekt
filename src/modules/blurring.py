@@ -6,7 +6,7 @@ def blurring(img, n, alpha, mask):
     """
     Blurs the image
 
-    Alpha should remain below 0.25 to prevent numeric
+    Alpha should remain below 0.24 to prevent numeric
     instablilty.
 
     Paramters
@@ -16,7 +16,7 @@ def blurring(img, n, alpha, mask):
     n : int
         Number of iterations (default = 10)
     alpha : float
-        delta_t / delta_x**2 (default = 0.25)
+        delta_t / delta_x**2 (default = 0.24)
 
     Returns
     -------
@@ -62,7 +62,7 @@ class Blurring(md.Modifier):
         self.params = [
             ("img", np.ndarray, None),
             ("iterations", int, 10),
-            ("alpha", float, 0.25),
+            ("alpha", float, 0.24),
             ("mask", np.ndarray, None)
         ]
         self.initDefaultValues()
