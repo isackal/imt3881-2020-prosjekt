@@ -14,14 +14,17 @@ class Modifier:
                     ("threshold",float,0.5)
                     ("image",np.ndarray,None)
         """
-        self.name="modifier"
-        self.function=lambda x : 2*x
-        self.params=[ ("source",int,0) ]
-        self.values=[1] #Just to make intelisense shut up about line 24 error
+        self.name = "modifier"
+        self.function = lambda x: 2*x
+        self.params = [("source", int, 0)]
+        self.values = [1]
         self.initDefaultValues()
+
     def initDefaultValues(self):
-        self.values=[]
+        self.values = []
         for i in self.params:
             self.values.append(i[2])
+
     def transform(self):
-        return self.function( *self.values )
+        # Check if no parameters contain none:
+        return self.function(*self.values)
