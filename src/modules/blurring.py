@@ -23,6 +23,8 @@ def blurring(img, n, alpha, mask):
     np.ndarray
         Blurred image
     """
+    if type(mask) is None:  # Blur whole image if no mask is given
+        mask = np.ones(img[:2])
 
     new_img = img.astype(float) / 255
     centerMask = mask.astype(bool)
