@@ -27,6 +27,8 @@ def inpaint(img, depth, mask):
     np.ndarray
         Inpainted image
     """
+    if mask is None:  # No inpaint region specified, do no inpainting
+        return img
 
     new_img = img.astype(float) / 255
     img = img.astype(float) / 255
