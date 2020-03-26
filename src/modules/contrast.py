@@ -20,7 +20,7 @@ def contrast(img, n, k, alpha):
     k : float
         Steepness of the new gradient (default = 5)
     alpha : float
-        delta_t / delta_x**2 (default = 0.25)
+        delta_t / delta_x**2 (default = 0.24)
 
     Returns
     -------
@@ -59,6 +59,6 @@ class Contrast(md.Modifier):
             ("img", np.ndarray, None),
             ("iterations", int, 10),
             ("steepness", float, 5.0),
-            ("alpha", float, 0.25)
+            ("alpha", float, 0.24)
         ]
         self.initDefaultValues()
