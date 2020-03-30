@@ -44,15 +44,6 @@ def blurring(img, n, alpha, mask):
     rightMask = np.roll(centerMask, 1, axis=1)
 
     for i in range(n):
-        """
-        laplace = (new_img[topMask] +
-                   new_img[botMask] +
-                   new_img[leftMask] +
-                   new_img[rightMask] -
-                   4 * new_img[centerMask])
-
-        new_img[~centerMask] += alpha * laplace
-        """
         laplace = (new_img[2:, 1:-1] +
                    new_img[:-2, 1:-1] +
                    new_img[1:-1, 2:] +
@@ -64,6 +55,8 @@ def blurring(img, n, alpha, mask):
         new_img[-1, :] = new_img[-2, :]
         new_img[:, 0] = new_img[:, 1]
         new_img[:, -1] = new_img[:, -2]
+
+        # revert sections of image not ment to be blurred
         new_img[~mask] = img[~mask]
 
     return (new_img * 255).astype(np.uint8)
