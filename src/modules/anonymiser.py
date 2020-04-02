@@ -2,12 +2,9 @@ import numpy as np
 import modifiers as md
 import cv2
 
-import sys
-np.set_printoptions(threshold=sys.maxsize)
+from blurring import blurring
+from colortogray import color_to_gray
 
-
-from modules.blurring import blurring
-from modules.colortogray import color_to_gray
 #   Brukt for testfunksjon. Slett ved endelig release
 import imageio
 import matplotlib.pyplot as plt
@@ -24,9 +21,9 @@ def anonymisering(img):
     eyes = eye_cascade.detectMultiScale(gray, 1.1, 1)
     for (x, y, w, h) in faces:
         mask[y:y+h, x:x+w] = True
-#    for (x, y, w, h) in eyes:
-#        mask[y:y+h, x:x+w] = True
-    #print(mask)
+    for (x, y, w, h) in eyes:
+        mask[y:y+h, x:x+w] = True
+
     return blurring(img, 1, 0.24, mask)
 
 

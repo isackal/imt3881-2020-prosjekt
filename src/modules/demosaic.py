@@ -1,8 +1,7 @@
 import numpy as np
 import modifiers as md
 
-from modules.inpaint import inpaint
-from modules.blurring import blurring
+from inpaint import inpaint
 
 #   Brukt for testfunksjon. Slett ved endelig release
 import imageio
@@ -42,7 +41,7 @@ class Demosaic(md.Modifier):
 
 #   Testfunksjon. Slett ved endelig release
 if __name__ == "__main__":
-    img = imageio.imread('../../face.png')
+    img = imageio.imread('../../../face.png')
     red = np.zeros(img.shape[:2])
     blue = np.zeros(img.shape[:2])
     green = np.zeros(img.shape[:2])
