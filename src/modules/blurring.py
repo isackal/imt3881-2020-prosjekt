@@ -45,7 +45,7 @@ def blurring(img, n, alpha, mask):
                    new_img[1:-1, 2:] +
                    new_img[1:-1, :-2] -
                    4 * new_img[1:-1, 1:-1])
-        new_img[1:-1, 1:-1] = alpha * laplace
+        new_img[1:-1, 1:-1] += alpha * laplace
 
         # Neumann boundary condition du/dt = 0
         new_img[0, :] = new_img[1, :]

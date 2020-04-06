@@ -14,17 +14,17 @@ def anonymisering(img):
     mask = np.zeros(img.shape[:2])
     mask = mask.astype(bool)
     gray = color_to_gray(img, 100, 0.1)
-    xmlPath = "data/Haarcascade_frontalface_alt2.xml"
+    xmlPath = "data/Haarcascade_frontalface_alt.xml"
     face_cascade = cv2.CascadeClassifier(xmlPath)
-    faces = face_cascade.detectMultiScale(gray, 1.05, 3)
+    faces = face_cascade.detectMultiScale(gray, 1.02, 5)
     eye_cascade = cv2.CascadeClassifier('data/haarcascade_eye.xml')
-    eyes = eye_cascade.detectMultiScale(gray, 1.1, 1)
+    eyes = eye_cascade.detectMultiScale(gray, 1.05, 1)
     for (x, y, w, h) in faces:
         mask[y:y+h, x:x+w] = True
-    for (x, y, w, h) in eyes:
-        mask[y:y+h, x:x+w] = True
+#    for (x, y, w, h) in eyes:
+#        mask[y:y+h, x:x+w] = True
 
-    return blurring(img, 1, 0.24, mask)
+    return blurring(img, 25, 0.24, mask)
 
 
 class Anonymisering(md.Modifier):
@@ -41,7 +41,7 @@ class Anonymisering(md.Modifier):
 
 #   Testfunksjon. Slett ved endelig release
 if __name__ == "__main__":
-    img = np.array(imageio.imread('../../People3.jpg'))
+    img = np.array(imageio.imread('../../../people2.jpg'))
     new_img = anonymisering(img)
 
     plt.imshow(new_img)
