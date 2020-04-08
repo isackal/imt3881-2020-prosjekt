@@ -79,9 +79,13 @@ def color_to_gray(img, n, alpha):
         new_img[:, 0] = new_img[:, 1]
         new_img[:, -1] = new_img[:, -2]
 
+        # Trim values outside of range
+        new_img[new_img > 1] = 1
+        new_img[new_img < 0] = 0
+
     new_img = (new_img * 255).astype(np.uint8)
     alpha_channel = np.full(new_img.shape, 255, dtype=np.uint8)
-    
+
     return np.dstack((new_img, new_img, new_img, alpha_channel))
 
 
