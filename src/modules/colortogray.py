@@ -66,7 +66,7 @@ def color_to_gray(img, n, alpha):
     # Init value, avrage of the three colors
     new_img = np.sum(og_img, axis=2) / 3
 
-    for i in range(1):
+    for i in range(n):
         laplace = (new_img[2:, 1:-1] +
                    new_img[:-2, 1:-1] +
                    new_img[1:-1, 2:] +
