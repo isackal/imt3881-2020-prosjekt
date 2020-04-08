@@ -39,15 +39,17 @@ def inpaint(img, depth, mask):
     bottom = np.amax(maskCords[:, 0]) + 1
     left = np.amin(maskCords[:, 1])
     right = np.amax(maskCords[:, 1]) + 1
-
     view = img[top:bottom, left:right]
     new_view = new_img[top:bottom, left:right]
     mask = mask[top:bottom, left:right]
 
+    # Ensure inpainting is not attempted directly on boundry
     mask[0, :] = False
     mask[-1, :] = False
     mask[:, 0] = False
     mask[:, -1] = False
+
+    # Creates diffrent views for diffusjon.
     t_mask = np.roll(mask, -1, axis=0)
     b_mask = np.roll(mask, 1, axis=0)
     l_mask = np.roll(mask, -1, axis=1)
@@ -61,6 +63,8 @@ def inpaint(img, depth, mask):
                    4 * new_view[mask]
                    )
         new_view[mask] += 0.24 * laplace
+
+        # Return values outside mask to original values
         new_view[~mask] = view[~mask]
 
         # Neumann boundary condition du/dt = 0

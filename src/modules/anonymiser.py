@@ -1,6 +1,6 @@
 import numpy as np
 import modifiers as md
-import cv2
+import cv2 as cv
 
 from blurring import blurring
 from colortogray import color_to_gray
@@ -11,6 +11,25 @@ import matplotlib.pyplot as plt
 
 
 def circularMask(w, h, epsilon=0.05):
+    """
+    Creates a circular binary mask
+
+    Parameters
+    ----------
+    w : int
+        width of the circle
+
+    h : int
+        height of the circle
+
+    epsilon : float
+        Tolerance, higher number accepts a larger region
+
+    Returns
+    -------
+    np.ndarray (w*h)
+        Bolean array with true values in a circle
+    """
     x, y = np.mgrid[0:w:1, 0:h:1]
     x = 2*x.astype(float)/(w-1) - 1
     y = 2*y.astype(float)/(h-1) - 1
@@ -18,41 +37,70 @@ def circularMask(w, h, epsilon=0.05):
 
 
 def anonymisering(img):
-    mask = np.zeros(img.shape[:2])
-    mask = mask.astype(bool)
-    gray = color_to_gray(img, 100, 0.1)
-    xmlPath = "data/Haarcascade_frontalface_alt.xml"
-    face_cascade = cv2.CascadeClassifier(xmlPath)
-    faces = face_cascade.detectMultiScale(gray, 1.02, 5)
-    eye_cascade = cv2.CascadeClassifier('data/haarcascade_eye.xml')
-    eyes = eye_cascade.detectMultiScale(gray, 1.1, 3)
-    eyes = eyes[0:, :2]
+    """
+    Creates a binary mask for where to blur an image
 
-    for (x, y) in eyes:
+    Looks for faces and eyes in images and creates binary masks
+    That blurring modules can blur out
+
+    Paramters
+    ---------
+    img : np.ndarray
+        Source image
+
+    Returns
+    -------
+    np.ndarray
+        Anonymized image
+    """
+    # Create a binary mask in the shape of the image
+    mask = np.zeros(img.shape[:2]).astype(bool)
+    # Converted to grayscale for face detection
+    gray = color_to_gray(img, 100, 0.1)
+
+    # Using already trained ML algorithm as basis for face and eye detection
+    eye_cascade = cv.CascadeClassifier('data/haarcascade_eye.xml')
+    face_cascade = cv.CascadeClassifier('data/Haarcascade_frontalface_alt.xml')
+
+    # Find position and size of eyes and faces in the image as np.ndarray
+    faces = face_cascade.detectMultiScale(gray, 1.02, 5)
+    eyes = eye_cascade.detectMultiScale(gray, 1.1, 3)
+    size = mask.shape[:2]
+
+    # Mark all places where ML algorithm think there is an eye
+    for (x, y, w, h) in eyes:
         mask[y, x] = True
 
-    for (x, y) in eyes:
-        view = mask[y-30:y+30, x-50:x+50]
-        a = np.argwhere(view)
+    # Looks for 2 eyes in a close region to eachother, increases Recall
+    # (Less blurring of regions which are not actually faces)
+    for (x, y, w, h) in eyes:
+        # Create a rectangle around a potential eye
+        top = int(max(0, y-(0.2*w)))
+        bottom = int(min(size[0], y+h))
+        left = int(max(0, x-(1.2*w)))
+        right = int(min(size[1], x+(2.2*w)))
+
+        # Find out how many values are true in the region
+        a = np.argwhere(mask[top:bottom, left:right])
+
+        # If it found another eye in the region create a mask to anonymize
         if(a.shape[0] == 2):
-            mask[y-30:y+70, x-10:x+10] = True
+            top -= h
+            bottom += int(2*h)
+            mask[top:bottom, left:right] = circularMask(bottom-top, right-left)
 
-    """
-    #Look for another nearby entry.
-    while(eyes.any()):
-        a = eyes[0]
-        eyes = eyes[1:]
-        for j in range(len(eyes)):
-            if(a[0] >= eyes[j][0]-50 and a[0] <= eyes[j][0]+50):
-                if(a[1] >= eyes[j][1]-50 and a[1] <= eyes[j][1]+50):
-                    mask[a[1]:a[1]+50, a[0]:a[0]+50] = True
-        #print(a)
-    """
-    #for (x, y, w, h) in faces:
-        #mask[y:y+h, x:x+w] = circularMask(h, w)
+        # If no other eye found, prevent region from being blurred at all
+        else:
+            mask[y, x] = False
 
+    # If a face is found, create a blurring mask in that region.
+    # Some chance of false positives, but priority on blurring to much
+    # More important to ensure everything that needs to be blurred is blurred.
+    for (x, y, w, h) in faces:
+        mask[y:y+h, x:x+w] = circularMask(h, w)
 
-    return blurring(img, 1, 0.24, mask)
+    # Return image after a blurring process is run in regions where faces are.
+    return blurring(img, 100, 0.24, mask)
 
 
 class Anonymisering(md.Modifier):
@@ -71,6 +119,5 @@ class Anonymisering(md.Modifier):
 if __name__ == "__main__":
     img = np.array(imageio.imread('../../../people.jpg'))
     new_img = anonymisering(img)
-
     plt.imshow(new_img)
     plt.show()
