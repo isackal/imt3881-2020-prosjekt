@@ -100,7 +100,7 @@ def anonymisering(img):
         mask[y:y+h, x:x+w] = circularMask(h, w)
 
     # Return image after a blurring process is run in regions where faces are.
-    return blurring(img, 100, 0.24, mask)
+    return blurring(img, 10, 10., mask)
 
 
 class Anonymisering(md.Modifier):
