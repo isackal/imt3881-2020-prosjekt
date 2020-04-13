@@ -1,12 +1,13 @@
 import numpy as np
 import modifiers as md
+import poisson
 
 #   Brukt for testfunksjon. Slett ved endelig release
 import imageio
 import matplotlib.pyplot as plt
 
 
-def inpaint(img, depth, mask):
+def inpaint(img, depth, mask, alpha):
     """
     Blurs the image
 
@@ -28,57 +29,8 @@ def inpaint(img, depth, mask):
     """
     if mask is None:  # No inpaint region specified, do no inpainting
         return img
-
-    new_img = img.astype(float) / 255
-    img = img.astype(float) / 255
-    mask = mask.astype(bool)
-    maskCords = np.argwhere(mask)
-
-    # Generate view of image around inpaint region
-    top = np.amin(maskCords[:, 0])
-    bottom = np.amax(maskCords[:, 0]) + 1
-    left = np.amin(maskCords[:, 1])
-    right = np.amax(maskCords[:, 1]) + 1
-    view = img[top:bottom, left:right]
-    new_view = new_img[top:bottom, left:right]
-    mask = mask[top:bottom, left:right]
-
-    # Ensure inpainting is not attempted directly on boundry
-    mask[0, :] = False
-    mask[-1, :] = False
-    mask[:, 0] = False
-    mask[:, -1] = False
-
-    # Creates diffrent views for diffusjon.
-    t_mask = np.roll(mask, -1, axis=0)
-    b_mask = np.roll(mask, 1, axis=0)
-    l_mask = np.roll(mask, -1, axis=1)
-    r_mask = np.roll(mask, 1, axis=1)
-
-    for i in range(depth):
-        laplace = (new_view[t_mask] +
-                   new_view[b_mask] +
-                   new_view[l_mask] +
-                   new_view[r_mask] -
-                   4 * new_view[mask]
-                   )
-        new_view[mask] += 0.24 * laplace
-
-        # Return values outside mask to original values
-        new_view[~mask] = view[~mask]
-
-        # Neumann boundary condition du/dt = 0
-        new_view[0, :] = new_view[1, :]
-        new_view[:, 0] = new_view[:, 1]
-        new_view[-1, :] = new_view[-2, :]
-        new_view[:, -1] = new_view[:, -2]
-        """
-        Note i think this might be the other way around
-        (over u[~mask] = u0[~mask]), but then demosaic
-        does not inpaint the boundry.
-        """
-
-    return (new_img * 255).astype(np.uint8)
+    else:
+        return poisson.explisitt(img, depth, mask, alpha)
 
 
 class Inpaint(md.Modifier):
@@ -110,6 +62,6 @@ if __name__ == "__main__":
     mask[88:91, 205:215] = 1
     mask[91:94, 207:213] = 1
 
-    new_img = inpaint(img, 300, mask)
+    new_img = inpaint(img, 300, mask, 0.24)
     plt.imshow(new_img, cmap=plt.cm.gray)
     plt.show()

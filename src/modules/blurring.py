@@ -1,5 +1,6 @@
 import modifiers as md
 import numpy as np
+import poisson
 
 
 def blurring(img, n, alpha, mask):
@@ -26,37 +27,7 @@ def blurring(img, n, alpha, mask):
     if mask is None:  # Blur whole image if no mask is given
         mask = np.ones(img.shape[:2])
 
-    new_img = img.astype(float) / 255
-    img = img.astype(float) / 255
-    mask = mask.astype(bool)
-    centerMask = mask
-
-    # Ensure blurring is not attempted directly on the boundary
-    centerMask[0, :] = False
-    centerMask[:, 0] = False
-    centerMask[-1:, :] = False
-    centerMask[:, -1:] = False
-
-    # Create diffrent views of blurring region for laplace
-
-    for i in range(n):
-        laplace = (new_img[2:, 1:-1] +
-                   new_img[:-2, 1:-1] +
-                   new_img[1:-1, 2:] +
-                   new_img[1:-1, :-2] -
-                   4 * new_img[1:-1, 1:-1])
-        new_img[1:-1, 1:-1] += alpha * laplace
-
-        # Neumann boundary condition du/dt = 0
-        new_img[0, :] = new_img[1, :]
-        new_img[-1, :] = new_img[-2, :]
-        new_img[:, 0] = new_img[:, 1]
-        new_img[:, -1] = new_img[:, -2]
-
-        # revert sections of image not ment to be blurred
-        new_img[~mask] = img[~mask]
-
-    return (new_img * 255).astype(np.uint8)
+    return poisson.explisitt(img, n, mask, alpha)
 
 
 class Blurring(md.Modifier):

@@ -117,7 +117,7 @@ class Anonymisering(md.Modifier):
 
 #   Testfunksjon. Slett ved endelig release
 if __name__ == "__main__":
-    img = np.array(imageio.imread('../../../people.jpg'))
+    img = np.array(imageio.imread('../../../People.jpg'))
     new_img = anonymisering(img)
     plt.imshow(new_img)
     plt.show()
