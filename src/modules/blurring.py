@@ -27,7 +27,7 @@ def blurring(img, n, alpha, mask):
     if mask is None:  # Blur whole image if no mask is given
         mask = np.ones(img.shape[:2])
 
-    return poisson.explisitt(img, n, mask, alpha)
+    return poisson.implisitt(img, n, mask, alpha)
 
 
 class Blurring(md.Modifier):
