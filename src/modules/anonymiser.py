@@ -67,6 +67,12 @@ def anonymisering(img):
     eyes = eye_cascade.detectMultiScale(gray, 1.1, 3)
     size = mask.shape[:2]
 
+    # If a face is found, create a blurring mask in that region.
+    # Some chance of false positives, but priority on blurring to much
+    # More important to ensure everything that needs to be blurred is blurred.
+    for (x, y, w, h) in faces:
+        mask[y:y+h, x:x+w] = circularMask(h, w)
+
     # Mark all places where ML algorithm think there is an eye
     for (x, y, w, h) in eyes:
         mask[y, x] = True
@@ -89,18 +95,15 @@ def anonymisering(img):
             bottom += int(2*h)
             mask[top:bottom, left:right] = circularMask(bottom-top, right-left)
 
+        # Skip regions where a mask is already created
+        elif(a.shape[0] > 2):
+            pass
         # If no other eye found, prevent region from being blurred at all
         else:
             mask[y, x] = False
 
-    # If a face is found, create a blurring mask in that region.
-    # Some chance of false positives, but priority on blurring to much
-    # More important to ensure everything that needs to be blurred is blurred.
-    for (x, y, w, h) in faces:
-        mask[y:y+h, x:x+w] = circularMask(h, w)
-
     # Return image after a blurring process is run in regions where faces are.
-    return blurring(img, 10, 10., mask)
+    return blurring(img, 1, 50, mask)
 
 
 class Anonymisering(md.Modifier):

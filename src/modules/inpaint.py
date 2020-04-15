@@ -30,7 +30,7 @@ def inpaint(img, depth, mask, alpha):
     if mask is None:  # No inpaint region specified, do no inpainting
         return img
     else:
-        return poisson.explisitt(img, depth, mask, alpha)
+        return poisson.implisitt(img, depth, mask, alpha)
 
 
 class Inpaint(md.Modifier):
@@ -62,6 +62,6 @@ if __name__ == "__main__":
     mask[88:91, 205:215] = 1
     mask[91:94, 207:213] = 1
 
-    new_img = inpaint(img, 300, mask, 0.24)
+    new_img = inpaint(img, 10, mask, 3.5)
     plt.imshow(new_img, cmap=plt.cm.gray)
     plt.show()

@@ -14,9 +14,9 @@ def demosaic(red, green, blue):
     blueMask = ~blue.astype(bool)
     img = np.zeros((red.shape[0], red.shape[1], 3))
 
-    new_red = inpaint(red, 50, redMask)
-    new_green = inpaint(green, 50, greenMask)
-    new_blue = inpaint(blue, 50, blueMask)
+    new_red = inpaint(red, 50, redMask, 0.24)
+    new_green = inpaint(green, 50, greenMask, 0.24)
+    new_blue = inpaint(blue, 50, blueMask, 0.24)
 
     img[:, :, 0] = new_red
     img[:, :, 1] = new_green
