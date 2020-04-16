@@ -11,17 +11,30 @@ from PyQt5 import QtGui
 import customWidgets as cst
 
 # Import Modifiers:
-import modules.bitcrusher as bitcrusher
-import modules.contrast as contrast
-import modules.blurring as blurring
-import modules.meanimage as meanimage
+import bitcrusher  # testmodule, can be kept
+import contrast
+import blurring
+import meanimage  # testmodule, delete later
+import kantBevGlatting as kbg
+import colortogray as ctg
+import demosaic
+import inpaint
+# import anonymiser  # commented out due to temporary overlapping library bug on mac
+import cloning
+# import poisson
 
 # Set Modifiers:
 MODIFIERS = [
     bitcrusher.Bitcrusher,
     contrast.Contrast,
     blurring.Blurring,
-    meanimage.Meanimage
+    meanimage.Meanimage,
+    kbg.KantbevarendeGlatting,
+    ctg.Colortogray,
+    demosaic.Demosaic,
+    inpaint.Inpaint,
+    # anonymiser.Anonymisering,
+    cloning.Cloning
 ]
 
 _NUMBERED_IMAGE = 0
