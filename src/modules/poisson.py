@@ -163,7 +163,7 @@ def implisitt(img, depth, mask, alpha):
         for j in range(size[1]):
             new_view[:, j] = spsolve(sparse[0], new_view[:, j])
 
-        # Diffuse each row seqquencially
+        # Diffuse each row sequencially
         # Possible to do all rows or everything at once?
         for k in range(size[0]):
             new_view[k, :] = spsolve(sparse[1], new_view[k, :])
