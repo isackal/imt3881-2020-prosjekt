@@ -2,6 +2,7 @@ import numpy as np
 from scipy.sparse import spdiags
 from scipy.sparse.linalg import spsolve
 
+
 def explTransform(views, alpha):
     """
     Creates a laplace for an explisit transformation
@@ -174,10 +175,54 @@ def implisitt(img, depth, mask, alpha):
     # Return diffused image
     return (new_img * 255).astype(np.uint8)
 
+    '''
+    Forsøk med convertering av bilde til vektor og bruk av sparse matrix på hele vektoren. 
+    Fungerer fortsatt ikke, mulig memory issues.
+    new_img = img.astype(float) / 255
+    img = img.astype(float) / 255
+    mask = mask.astype(bool)
+    maskCords = np.argwhere(mask)
+    size = img.shape[:2]
+
+    # Reduce image size to region diffuse region, performance improvement
+    top = np.amin(maskCords[:, 0])
+    bottom = np.amax(maskCords[:, 0]) + 1
+    left = np.amin(maskCords[:, 1])
+    right = np.amax(maskCords[:, 1]) + 1
+    view = img[top:bottom, left:right]
+    new_view = new_img[top:bottom, left:right]
+    mask = mask[top:bottom, left:right]
+    size = view.shape
+
+    view = view.reshape((size[0]*size[1]*size[2], 1))
+    new_view = new_view.reshape((size[0]*size[1]*size[2], 1))
+
+    sidediag = np.concatenate(([0, 0], -alpha * np.ones(view.shape[0] - 2)))
+    centerdiag = np.concatenate((
+                                [1],
+                                (1 + 2 * alpha) * np.ones(view.shape[0] - 2),
+                                [1]
+                                ))
+    diag = np.array([sidediag, sidediag, centerdiag, sidediag, sidediag])
+    sparse = spdiags(
+                    diag, [size[1], 1, 0, -1, -size[1]],
+                    view.shape[0], view.shape[0]
+                    ).tocsc()
+
+    new_view = spsolve(sparse, new_view)
+
+    new_view = new_view.reshape((size[0], size[1], size[2]))
+    new_img[top:bottom, left:right] = new_view
+
+    return (new_img * 255).astype(np.uint8)
+    '''
+
 
 if __name__ == "__main__":
-    img = np.ones((5, 10)) * 255
-    img[1:4, 1:9] = 0
+    img = np.arange(45)
+    img = img.reshape((3, 5, 3))
+    #img = np.array(imageio.imread("test.png"))
+    #img[1:4, 1:9] = 0
     n = 2
     mask = np.ones((5, 10)).astype(bool)
     mask[2:4, 3:6] = False
