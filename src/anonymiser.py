@@ -120,7 +120,7 @@ class Anonymisering(md.Modifier):
 
 #   Testfunksjon. Slett ved endelig release
 if __name__ == "__main__":
-    img = np.array(imageio.imread('../../../People.jpg'))  # this file does not exist
+    img = np.array(imageio.imread('../../People.jpg'))  # this file does not exist
     # TODO upload the image to testimages folder :)
     new_img = anonymisering(img)
     plt.imshow(new_img)
