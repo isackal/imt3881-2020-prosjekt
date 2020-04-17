@@ -1,3 +1,4 @@
+import numpy as np
 
 class Modifier:
     def __init__(self):
@@ -27,4 +28,7 @@ class Modifier:
 
     def transform(self):
         # Check if no parameters contain none:
-        return self.function(*self.values)
+        if any(elem is None for elem in self.values[1:]):
+            return self.values[0]
+        else:
+            return np.clip(self.function(*self.values), 0, 255).astype(np.uint8)

@@ -9,6 +9,10 @@ import PyQt5.QtWidgets as wd
 import PyQt5.QtCore as cr
 from PyQt5 import QtGui
 import customWidgets as cst
+import errorhandling as eh
+
+# Import Image interactivity modifiers:
+import imageMath
 
 # Import Modifiers:
 import bitcrusher  # testmodule, can be kept
@@ -19,12 +23,15 @@ import kantBevGlatting as kbg
 import colortogray as ctg
 import demosaic
 import inpaint
-# import anonymiser  # commented out due to temporary overlapping library bug on mac
+# import anonymiser  # temporary overlapping library bug on mac
 import cloning
 # import poisson
 
 # Set Modifiers:
 MODIFIERS = [
+    imageMath.WeightedAddition,
+    imageMath.FitSize,
+    imageMath.Offset,
     bitcrusher.Bitcrusher,
     contrast.Contrast,
     blurring.Blurring,
@@ -37,11 +44,50 @@ MODIFIERS = [
     cloning.Cloning
 ]
 
-_NUMBERED_IMAGE = 0
+_NUMBERED_IMAGE = 0  # used for defualt naming of images
 
-SELECTED = None
+SELECTED = None  # pointer to current selected image
+
+BIG_IMAGE = None  # pointer to the big screen image
 
 GLOBAL_IMAGES = []  # List of all image groups
+
+
+def upDownDelToolbar(
+    upFunc,
+    downFunc,
+    delFunc
+):
+    """
+    This function creates a toolbar with buttons that move
+    something up or down in a "hirarchy" or delete it.
+    """
+    toolbar = cst.Packlist(None, wd.QHBoxLayout)
+    _up = cst.MiniButton(
+        None,
+        "../ui/up.png",
+        "Move modifier up in the pipeline."
+    )
+    _down = cst.MiniButton(
+        None,
+        "../ui/down.png",
+        "Move modifier down in the pipeline."
+    )
+    _del = cst.MiniButton(
+        None,
+        "../ui/delete.png",
+        "Delete modifier"
+    )
+
+    _up.mousePressEvent = upFunc
+    _down.mousePressEvent = downFunc
+    _del.mousePressEvent = delFunc
+
+    toolbar.addWidget(_up)
+    toolbar.addWidget(_down)
+    toolbar.addWidget(_del)
+
+    return toolbar
 
 
 class Collapser(wd.QWidget):
@@ -49,19 +95,19 @@ class Collapser(wd.QWidget):
         wd.QWidget.__init__(self,  parent)
         layout = wd.QVBoxLayout()
         top = wd.QGroupBox()
-        topl = wd.QHBoxLayout()
-        topl.setContentsMargins(8,  0,  8,  0)
-        topl.setAlignment(cr.Qt.AlignLeft)
-        topl.setStretch(0,  0)
-        top.setLayout(topl)
+        self.topl = wd.QHBoxLayout()
+        self.topl.setContentsMargins(8,  0,  8,  0)
+        self.topl.setAlignment(cr.Qt.AlignLeft)
+        self.topl.setStretch(0,  0)
+        top.setLayout(self.topl)
         self.minimizeButton = wd.QPushButton('+',  self)
         self.minimizeButton.setFixedHeight(32)
         self.minimizeButton.setFixedWidth(32)
         self.minimizeButton.mousePressEvent = self.toggle
-        topl.addWidget(self.minimizeButton)
+        self.topl.addWidget(self.minimizeButton)
         self.title = "Modify"
         self.label = wd.QLabel(self.title,  self)
-        topl.addWidget(self.label)
+        self.topl.addWidget(self.label)
         top.setFixedHeight(48)
         self.vgrp = wd.QGroupBox()
         cLayout = wd.QVBoxLayout()
@@ -91,8 +137,15 @@ class Collapser(wd.QWidget):
             btn = wd.QPushButton("Button %2d" % i,  self)
             self.content.addWidget(btn)
 
+    def addToTopUI(self, widget):
+        self.topl.addWidget(widget)
+
 
 class TypeInput(wd.QWidget):
+    """
+    A more sofisticated input widget that can be an image or
+    a number.
+    """
     def __init__(self,  parent,  _type):
         wd.QWidget.__init__(self, parent)
         self.playout = wd.QHBoxLayout()
@@ -159,11 +212,88 @@ class TypeInput(wd.QWidget):
 
 
 class ModifierWidget(Collapser):
+    """
+    This is the user interface of a certain modifier.
+    """
     def __init__(self,  parent,  modf,  reference):
-        self.reference = reference
+        self.reference = reference  # image input
         self.modifier = modf()
         self.dtas = []
+        self.widgetPipeline = parent
         Collapser.__init__(self,  parent)
+        tl = upDownDelToolbar(
+            self.moveUp,
+            self.moveDown,
+            self.deleteThis
+        )
+        self.addToTopUI(tl)
+        self.masterLayout = None  # Pointer to its "Packlist"
+
+    def moveUp(self, event):
+        if self.masterLayout is not None:
+            neighbour = self.masterLayout.moveUp(self)
+            if neighbour is not None:
+                self.swapPlaces(neighbour, self)
+                self.reference.pipe()
+                print("Moved up a bit")
+
+    def moveDown(self, event):
+        if self.masterLayout is not None:
+            neighbour = self.masterLayout.moveDown(self)
+            if neighbour is not None:
+                self.swapPlaces(self, neighbour)
+                neighbour.reference.pipe()
+                print("Moved down a bit")
+
+    def swapPlaces(self, first, second):
+        global BIG_IMAGE
+        """
+        This swaps first down and second up. Will not work in
+        opposite order.
+        """
+        pf = first.img.src  # parent-image first. Assumed to not be None
+        # parent second is assumed to me first
+        cS = first.masterLayout.next(first)  # child second
+        # A-- because it is assumed the order in the layout changed
+        # is all ready changed.
+        second.img.disconnectParent()
+        first.img.disconnectParent()
+
+        pf.connect(second.img)
+        second.reference = pf
+        second.img.connect(first.img)
+        first.reference = second.img
+
+        if cS is not None:
+            cS.img.disconnectParent()
+            first.img.connect(cS.img)
+            cS.reference = first.img
+        else:
+            # Assuming bigImg is the same accross all images:
+            BIG_IMAGE.disconnectParent()
+            first.img.connect(BIG_IMAGE)
+            self.widgetPipeline.at = first.img
+
+    def deleteThis(self, event=None):
+        global BIG_IMAGE
+        pimg = self.img.src  # parent-image. Assumed to not be None
+        # parent second is assumed to me first
+        child = self.masterLayout.next(self)  # child second
+        self.img.disconnectParent()
+        self.masterLayout.removeWidget(self)
+
+        if child is not None:
+            child.img.disconnectParent()
+            pimg.connect(child.img)
+            child.reference = pimg
+        else:
+            self.widgetPipeline.at = pimg
+            BIG_IMAGE.disconnectParent()
+            pimg.connect(BIG_IMAGE)
+        print("Pipes length %d" % len(pimg.pipes))
+        pimg.pipe()
+
+        self.deleteLater()
 
     def mainUI(self):
         self.img = imageFrame(
@@ -251,6 +381,7 @@ class imageFrame(cst.DragableWidget):
         self.group = [self]
         self.inputAble = True  # Can be dragged and used as input
         self.onPipe = cst.noFunction
+        self.isDeleted = False
 
     def pipeToGroup(self, grp):
         grp.append(self)
@@ -343,6 +474,7 @@ class imageFrame(cst.DragableWidget):
             zinBtn = cst.MiniButton(self, "../ui/zoomInDark.png", "Zoom in")
             zutBtn = cst.MiniButton(self, "../ui/zoomOutDark.png", "Zoom out")
             delBtn = cst.MiniButton(self, "../ui/delete.png", "Delete image")
+            delBtn.mousePressEvent = self.deleteDialog
             toolbar = cst.Packlist(self, wd.QHBoxLayout)
             toolbar.setMaximumHeight(16)
             toolbar.addWidget(loadBtn)
@@ -388,6 +520,24 @@ class imageFrame(cst.DragableWidget):
         print(self.zoom)
         self.update_image()
 
+    def deleteDialog(self, event):
+        msg = '\n'.join([
+            "Would you like to delete this image?",
+            "NB: This will change the results of any operators",
+            "using this image."
+        ])
+        dlg = cst.OptionsDialog(
+            msg,
+            [
+                "Yes",
+                "No"
+            ],
+            False
+        )
+        # 0 is index of yes:
+        if dlg.exec_() and (dlg.selectedIndex.get() == 0):
+            self.erase()
+
     def load_dialog(self, event):
         if self.loadable:
             fname = wd.QFileDialog.getOpenFileName(
@@ -413,11 +563,26 @@ class imageFrame(cst.DragableWidget):
         if child in self.pipes:
             self.pipes.remove(child)
 
+    def disconnectChildren(self):
+        ret = []
+        for child in self.pipes:
+            child.src = None
+            ret.append(child)
+        self.pipes = []
+        return ret
+
     def connect(self, child):
-        if child.src is None:
+        if (child is not None) and (child.src is None):
             print(child.src)
             child.src = self
             self.pipes.append(child)
+
+    def connectList(self, children):
+        for child in children:
+            if child.src is None:
+                print(child.src)
+                child.src = self
+                self.pipes.append(child)
 
     def zooming(self, event):
         dt = event.angleDelta()
@@ -461,6 +626,15 @@ class imageFrame(cst.DragableWidget):
             self.widgetPipeline.toggleOn()
             SELECTED = self
 
+    def deselectThis(self):
+        global SELECTED
+        if (
+            (SELECTED is self)
+        ):
+            self.widgetPipeline.toggleOff()
+            SELECTED = None
+            self.bigImg.disconnectParent()
+
     def pipeOnce(self):
         for child in self.pipes:
             print("Sending data to %s" % child.title)
@@ -469,6 +643,9 @@ class imageFrame(cst.DragableWidget):
             self.onPipe()
 
     def pipe(self):
+        if self.isDeleted:
+            print("Why am I still alive?")
+            sys.exit(1)
         print("\n\nPiping")
         print(self.zoomable)
         for child in self.pipes:
@@ -526,6 +703,14 @@ class imageFrame(cst.DragableWidget):
             else:
                 print("Case 2")
                 self.update_image()
+
+    def erase(self):
+        global GLOBAL_IMAGES
+        self.deselectThis()
+        if self.widgetPipeline is not None:
+            self.widgetPipeline.erase()
+        GLOBAL_IMAGES.remove(self)
+        self.deleteLater()
 
 
 class ReferenceImage(wd.QLabel):  # $rfi
@@ -701,6 +886,9 @@ class PipelineWidget(wd.QScrollArea):
         self.visible = False
         self.setHidden(True)
 
+    def erase(self):
+        self.deleteLater()
+
 
 class Window(wd.QDialog):
 
@@ -719,7 +907,6 @@ class Window(wd.QDialog):
         # self.timer.start(1000/self.fps)
         # Init window:
         self.initWindow()
-        self.images = []
         self.imgSelected = False
         self.selected = None
 
@@ -735,6 +922,7 @@ class Window(wd.QDialog):
         self.show()
 
     def mainUI(self):
+        global BIG_IMAGE
         layout = wd.QHBoxLayout()
         pn0 = wd.QScrollArea()
         self.imagesSection = cst.Packlist(self)
@@ -762,6 +950,7 @@ class Window(wd.QDialog):
 
         # Main Image:
         self.mainImg = imageFrame(self)
+        BIG_IMAGE = self.mainImg
         self.mainImg.setSizeInterval(256, 256, 2560, 2560)
         self.mainImg.loadable = False
         self.mainImg.recursion = False  # Turn off recursive feedback
@@ -807,7 +996,6 @@ class Window(wd.QDialog):
         _add.setSize(128, 128)
         _add.bigImg = self.mainImg
         GLOBAL_IMAGES.append(_add)
-        self.images.append(_add)
         self.imagesSection.addWidget(_add)
         pl = PipelineWidget(self, _add)
         self.pipelineWidgets.addWidget(pl)
@@ -852,7 +1040,6 @@ class SelectImageDialog(wd.QDialog):  # $sid
         self.InitWindow()
 
     def mainUI(self):
-        self.images = []
         self.imgSelected = False
         images = cst.Packlist(self)
         images.select = None  # Requiered
@@ -913,6 +1100,11 @@ def selectImage():
         return dlg.register
     else:
         return None
+
+
+def selectOption(txt, options):
+    pass
+    # wd.Dial
 
 
 def uiStart():
