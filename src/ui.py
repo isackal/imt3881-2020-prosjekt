@@ -9,7 +9,7 @@ import PyQt5.QtWidgets as wd
 import PyQt5.QtCore as cr
 from PyQt5 import QtGui
 import customWidgets as cst
-import errorhandling as eh
+import errorhandling as eh  # used to display error and warnings
 
 # Import Image interactivity modifiers:
 import imageMath
@@ -421,6 +421,16 @@ class imageFrame(cst.DragableWidget):
                 _image[:, :, 3] = o_image[:, :, 3]  # BLUE
             self.setData(_image.astype(np.uint8))
 
+    def exportImageDialog(self, event):
+        fil, _ = wd.QFileDialog.getSaveFileName(
+            self,
+            'Export image',
+            './',
+            'Images (*.png *.jpg)'
+            )
+        if fil:
+            im.imwrite(fil, self.picdata)
+
     def update_image(self):
         self.qimg = QtGui.QImage(
             self.picdata,
@@ -471,6 +481,7 @@ class imageFrame(cst.DragableWidget):
             )
             fitButton.mousePressEvent = self.autoFit
             expBtn = cst.MiniButton(self, "../ui/export.png", "Export image")
+            expBtn.mousePressEvent = self.exportImageDialog
             zinBtn = cst.MiniButton(self, "../ui/zoomInDark.png", "Zoom in")
             zutBtn = cst.MiniButton(self, "../ui/zoomOutDark.png", "Zoom out")
             delBtn = cst.MiniButton(self, "../ui/delete.png", "Delete image")
@@ -544,7 +555,7 @@ class imageFrame(cst.DragableWidget):
                 self.parent,
                 'Sorce Image',
                 './',
-                'Image Files (*.jpg *.jpeg *.gif *.png)'
+                'Image File (*.jpg *.jpeg *.gif *.png)'
                 )
             if fname[0] != "" and fname[0] != self.fname:
                 self.fname = fname[0]
@@ -711,6 +722,9 @@ class imageFrame(cst.DragableWidget):
             self.widgetPipeline.erase()
         GLOBAL_IMAGES.remove(self)
         self.deleteLater()
+
+    def __del__(self):
+        self.disconnectParent()  # TODO
 
 
 class ReferenceImage(wd.QLabel):  # $rfi

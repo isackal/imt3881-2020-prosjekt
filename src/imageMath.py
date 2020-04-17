@@ -42,6 +42,10 @@ def offset(img, ox, oy):
     ret[ox:, 0:oy] = img[0:w, h:, :]
     return ret
 
+# TODO implement padding
+# TODO implement scaling
+# TODO implement cropping
+
 
 class WeightedAddition(md.Modifier):
     def __init__(self):
