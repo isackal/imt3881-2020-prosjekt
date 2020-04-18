@@ -1,0 +1,3 @@
+When creating an weighted addition mdoifier and loading an image, then delete the modifier and select the image,
+it seem it is still connected to the image, making the program crash.
+

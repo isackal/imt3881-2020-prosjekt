@@ -1,6 +1,7 @@
 from PyQt5 import QtGui
 import PyQt5.QtWidgets as wd
 import PyQt5.QtCore as cr
+from time import time
 
 
 def noFunction():  # This function is a place holder function.
@@ -36,6 +37,72 @@ class DragableWidget(wd.QWidget):
         drag.setPixmap(pixmap)
         drag.setHotSpot(event.pos())
         drag.exec_(cr.Qt.CopyAction | cr.Qt.MoveAction)
+
+
+class NumericInput(wd.QLineEdit):
+    def __init__(self, _type, parent=None):
+        wd.QLineEdit.__init__(self, parent)
+        self.dragStartPosition = self.pos()
+        self.dragAtPosition = self.x()
+        self.dragStartX = self.x()
+        self.startValue = 0.
+        self.addValue = 0.
+        self._type = _type
+        self._time = 0.
+        self.sensitivity = 1.
+        self.precision = 4
+        if _type is int:
+            self.sensitivity = 0.1
+        else:
+            self.sensitivity = 0.01
+        if _type == int:
+            self.setValidator(IntValidator)
+        else:
+            self.setValidator(FloatValidator)
+
+    def getValue(self):
+        val = self._type(0)
+        if self.text() != "":
+            try:
+                val = self._type(self.text())
+            except Exception:
+                val = 0
+        return val
+
+    def setValue(self, val):
+        if self._type is float:
+            self.setText("%.4f" % val)
+        else:
+            self.setText("%d" % round(val))
+
+    def mousePressEvent(self, event):
+        if event.button() == cr.Qt.LeftButton:
+            self.dragStartPosition = event.pos()
+            self.dragAtPosition = event.x()
+            self._time = time()
+            self.startValue = 1.*self.getValue()
+            self.addValue = 0.
+            self.dragStartX = event.x()
+
+    def mouseMoveEvent(self, event):
+        if not (event.buttons() & cr.Qt.LeftButton):
+            return
+        if (
+            (event.pos() - self.dragStartPosition).manhattanLength() <
+            wd.QApplication.startDragDistance()
+        ):
+            return
+        newTime = time()
+        dt = newTime - self._time
+        dx = event.x() - self.dragAtPosition
+        dxx = event.x() - self.dragStartX
+        _add = self._type(dx / dt)
+        self.addValue += _add
+        self._time = newTime
+        self.dragAtPosition = event.x()
+        self.setValue(self._type(
+            self.startValue + dxx * self.sensitivity
+            ))
 
 
 class MiniButton(wd.QLabel):
