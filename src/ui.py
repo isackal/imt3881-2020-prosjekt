@@ -9,7 +9,7 @@ import PyQt5.QtWidgets as wd
 import PyQt5.QtCore as cr
 from PyQt5 import QtGui
 import customWidgets as cst
-import errorhandling as eh
+import errorhandling as eh  # used to display error and warnings
 
 # Import Image interactivity modifiers:
 import imageMath
@@ -21,6 +21,7 @@ import blurring
 import meanimage  # testmodule, delete later
 import kantBevGlatting as kbg
 import colortogray as ctg
+import grayscale as ctg2
 import demosaic
 import inpaint
 # import anonymiser  # temporary overlapping library bug on mac
@@ -32,12 +33,23 @@ MODIFIERS = [
     imageMath.WeightedAddition,
     imageMath.FitSize,
     imageMath.Offset,
+    imageMath.ColorToGrayWeighted,
+    imageMath.VecotrGray,
+    imageMath.Binary,
+    imageMath.Invert,
+    imageMath.Multiplication,
+    imageMath.Exponent,
+    imageMath.Procedural,
+    imageMath.Diff,
+    imageMath.Normalize,
+    imageMath.ColorFilter,
     bitcrusher.Bitcrusher,
     contrast.Contrast,
     blurring.Blurring,
     meanimage.Meanimage,
     kbg.KantbevarendeGlatting,
     ctg.Colortogray,
+    ctg2.CTG,
     demosaic.Demosaic,
     inpaint.Inpaint,
     # anonymiser.Anonymisering,
@@ -151,7 +163,7 @@ class TypeInput(wd.QWidget):
         self.playout = wd.QHBoxLayout()
         self.setLayout(self.playout)
         self.isImage = False
-        validator = None
+        self._type = _type
         self.widget = None
         if _type is np.ndarray:
             self.isImage = True
@@ -166,14 +178,7 @@ class TypeInput(wd.QWidget):
             self.setFixedHeight(64)
             self.widget.mousePressEvent = self.setImage
         else:
-            if _type == int:
-                validator = cst.IntValidator
-            else:
-                validator = cst.FloatValidator
-            if _type == int or _type == float:
-                self.widget = wd.QLineEdit(self)
-                self.widget.setValidator(validator)
-            self._type = _type
+            self.widget = cst.NumericInput(_type)
             self.playout.addWidget(self.widget)
 
     def setText(self, txt):
@@ -183,17 +188,14 @@ class TypeInput(wd.QWidget):
         self.setText(str(self.getValue()))
 
     def getValue(self):
-        val = 0
+        val = self._type(0)
         if self.isImage:
             if self.widget.src is not None:
                 return self.widget.src.picdata
             else:
                 return None
-        if self.widget is not None and self.widget.text() != "":
-            try:
-                val = self._type(self.widget.text())
-            except Exception:
-                val = 0
+        else:
+            val = self.widget.getValue()
         return val
 
     def setImage(self, event=None):
@@ -217,7 +219,9 @@ class ModifierWidget(Collapser):
     """
     def __init__(self,  parent,  modf,  reference):
         self.reference = reference  # image input
+        print("#75")
         self.modifier = modf()
+        print("#76")
         self.dtas = []
         self.widgetPipeline = parent
         Collapser.__init__(self,  parent)
@@ -318,7 +322,7 @@ class ModifierWidget(Collapser):
             if inp.isImage:
                 inp.widget.onPipe = self.onUpdateData
             else:
-                inp.widget.textEdited.connect(self.onUpdateText)
+                inp.widget.textChanged.connect(self.onUpdateText)
             grd.addWidget(lbl,  _row,  0)
             grd.addWidget(inp,  _row,  1)
             self.dtas.append(inp)
@@ -421,6 +425,16 @@ class imageFrame(cst.DragableWidget):
                 _image[:, :, 3] = o_image[:, :, 3]  # BLUE
             self.setData(_image.astype(np.uint8))
 
+    def exportImageDialog(self, event):
+        fil, _ = wd.QFileDialog.getSaveFileName(
+            self,
+            'Export image',
+            './',
+            'Images (*.png *.jpg)'
+            )
+        if fil:
+            im.imwrite(fil, self.picdata)
+
     def update_image(self):
         self.qimg = QtGui.QImage(
             self.picdata,
@@ -471,6 +485,7 @@ class imageFrame(cst.DragableWidget):
             )
             fitButton.mousePressEvent = self.autoFit
             expBtn = cst.MiniButton(self, "../ui/export.png", "Export image")
+            expBtn.mousePressEvent = self.exportImageDialog
             zinBtn = cst.MiniButton(self, "../ui/zoomInDark.png", "Zoom in")
             zutBtn = cst.MiniButton(self, "../ui/zoomOutDark.png", "Zoom out")
             delBtn = cst.MiniButton(self, "../ui/delete.png", "Delete image")
@@ -544,7 +559,7 @@ class imageFrame(cst.DragableWidget):
                 self.parent,
                 'Sorce Image',
                 './',
-                'Image Files (*.jpg *.jpeg *.gif *.png)'
+                'Image File (*.jpg *.jpeg *.gif *.png)'
                 )
             if fname[0] != "" and fname[0] != self.fname:
                 self.fname = fname[0]
@@ -711,6 +726,9 @@ class imageFrame(cst.DragableWidget):
             self.widgetPipeline.erase()
         GLOBAL_IMAGES.remove(self)
         self.deleteLater()
+
+    def __del__(self):
+        self.disconnectParent()  # TODO
 
 
 class ReferenceImage(wd.QLabel):  # $rfi

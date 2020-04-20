@@ -20,7 +20,7 @@ def color_to_gray(img, n, alpha):
     np.ndarray
         Grayscale image
     """
-    og_img = img.astype(float) / 255
+    og_img = img[:, :, :3].astype(float) / 255
 
     # Length of color vector
     rgb_len = np.sum(og_img**2, axis=2)**0.5
