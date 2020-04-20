@@ -1,6 +1,9 @@
 import numpy as np
 from scipy.sparse import spdiags
 from scipy.sparse.linalg import spsolve
+from scipy.sparse.linalg import inv
+from scipy.sparse.linalg import bicgstab
+import imageio
 
 
 def explTransform(views, alpha):
@@ -142,10 +145,47 @@ def implisitt(img, depth, mask, alpha):
     new_view = new_img[top:bottom, left:right]
     mask = mask[top:bottom, left:right]
 
-    # Get size of this new smaler image
+    """
+    shape = view.shape
+    # Create 1D array for matrix opperation on whole array
+    view = view.ravel()
+    new_view = new_view.ravel()
+    mask = mask.ravel()
+    mask = np.append(mask, [mask, mask])
+
+    size = view.shape[0]
+    upperdiag = np.concatenate(([0, 0], -alpha * np.ones(size - 2)))
+    centerdiag = np.concatenate((
+                                    [1],
+                                    (1 + 2 * alpha) * np.ones(size - 2),
+                                    [1]
+                                ))
+    lowerdiag = np.concatenate((-alpha * np.ones(size - 2), [0, 0]))
+    diag = np.array([upperdiag, centerdiag, lowerdiag])
+
+    sparse = spdiags(diag, [1, 0, -1], size, size).tocsc()
+    #invSparse = inv(sparse)
+    for i in range(depth):
+        res = bicgstab(sparse, new_view, new_view)
+        if(res[1] == 0):
+            new_view = res[0]
+            new_view[~mask] = view[~mask]
+        else:
+            print(
+                "The itterative solution did not work out.\
+                \nTry an explisite solution to this picture"
+                )
+            return (img * 255).astype(np.uint8)
+
+    new_view = np.asarray(new_view).reshape(shape)
+    new_img[top:bottom, left:right] = new_view
+
+    return (new_img * 255).astype(np.uint8)
+    """
+
+    # Create a sparse matrix for columns and rows in picture
     size = view.shape[:2]
     sparse = []
-    # Create a sparse matrix for columns and rows in picture
     for i in range(2):
         u_diag = np.concatenate(([0, 0], -alpha * np.ones(size[i] - 2)))
         c_diag = np.concatenate((
@@ -175,58 +215,16 @@ def implisitt(img, depth, mask, alpha):
     # Return diffused image
     return (new_img * 255).astype(np.uint8)
 
-    '''
-    Forsøk med convertering av bilde til vektor og bruk av sparse matrix på hele vektoren. 
-    Fungerer fortsatt ikke, mulig memory issues.
-    new_img = img.astype(float) / 255
-    img = img.astype(float) / 255
-    mask = mask.astype(bool)
-    maskCords = np.argwhere(mask)
-    size = img.shape[:2]
-
-    # Reduce image size to region diffuse region, performance improvement
-    top = np.amin(maskCords[:, 0])
-    bottom = np.amax(maskCords[:, 0]) + 1
-    left = np.amin(maskCords[:, 1])
-    right = np.amax(maskCords[:, 1]) + 1
-    view = img[top:bottom, left:right]
-    new_view = new_img[top:bottom, left:right]
-    mask = mask[top:bottom, left:right]
-    size = view.shape
-
-    view = view.reshape((size[0]*size[1]*size[2], 1))
-    new_view = new_view.reshape((size[0]*size[1]*size[2], 1))
-
-    sidediag = np.concatenate(([0, 0], -alpha * np.ones(view.shape[0] - 2)))
-    centerdiag = np.concatenate((
-                                [1],
-                                (1 + 2 * alpha) * np.ones(view.shape[0] - 2),
-                                [1]
-                                ))
-    diag = np.array([sidediag, sidediag, centerdiag, sidediag, sidediag])
-    sparse = spdiags(
-                    diag, [size[1], 1, 0, -1, -size[1]],
-                    view.shape[0], view.shape[0]
-                    ).tocsc()
-
-    new_view = spsolve(sparse, new_view)
-
-    new_view = new_view.reshape((size[0], size[1], size[2]))
-    new_img[top:bottom, left:right] = new_view
-
-    return (new_img * 255).astype(np.uint8)
-    '''
 
 
 if __name__ == "__main__":
-    img = np.arange(45)
-    img = img.reshape((3, 5, 3))
+    img = np.array(imageio.imread("../../Small_grayScale.png"))
     #img = np.array(imageio.imread("test.png"))
-    #img[1:4, 1:9] = 0
+    img[1:4, 1:9] = 0
     n = 2
     mask = np.ones((5, 10)).astype(bool)
     mask[2:4, 3:6] = False
     alpha = 0.5
-    print(img)
+    #print(img)
     new_img = implisitt(img, n, mask, alpha)
-    print(new_img)
+    #print(new_img)
