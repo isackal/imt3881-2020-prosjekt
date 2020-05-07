@@ -145,76 +145,35 @@ def implisitt(img, depth, mask, alpha):
     new_view = new_img[top:bottom, left:right]
     mask = mask[top:bottom, left:right]
 
-    """
     shape = view.shape
     # Create 1D array for matrix opperation on whole array
     view = view.ravel()
     new_view = new_view.ravel()
     mask = mask.ravel()
-    mask = np.append(mask, [mask, mask])
 
     size = view.shape[0]
+    nupperdiag = np.concatenate((np.zeros(shape[1]),
+                                -alpha * np.ones(size - shape[1])))
     upperdiag = np.concatenate(([0, 0], -alpha * np.ones(size - 2)))
     centerdiag = np.concatenate((
                                     [1],
-                                    (1 + 2 * alpha) * np.ones(size - 2),
+                                    (1 + 4 * alpha) * np.ones(size - 2),
                                     [1]
                                 ))
     lowerdiag = np.concatenate((-alpha * np.ones(size - 2), [0, 0]))
-    diag = np.array([upperdiag, centerdiag, lowerdiag])
+    nlowerdiag = np.concatenate((-alpha * np.ones(size - shape[1]),
+                                np.zeros(shape[1])))
+    diag = np.array([nupperdiag, upperdiag, centerdiag, lowerdiag, nlowerdiag])
+    sparse = spdiags(diag, [shape[1], 1, 0, -1, -shape[1]], size, size).tocsc()
 
-    sparse = spdiags(diag, [1, 0, -1], size, size).tocsc()
-    #invSparse = inv(sparse)
     for i in range(depth):
-        res = bicgstab(sparse, new_view, new_view)
-        if(res[1] == 0):
-            new_view = res[0]
-            new_view[~mask] = view[~mask]
-        else:
-            print(
-                "The itterative solution did not work out.\
-                \nTry an explisite solution to this picture"
-                )
-            return (img * 255).astype(np.uint8)
+        new_view = spsolve(sparse, new_view)
+        new_view[~mask] = view[~mask]
 
     new_view = np.asarray(new_view).reshape(shape)
     new_img[top:bottom, left:right] = new_view
 
     return (new_img * 255).astype(np.uint8)
-    """
-
-    # Create a sparse matrix for columns and rows in picture
-    size = view.shape[:2]
-    sparse = []
-    for i in range(2):
-        u_diag = np.concatenate(([0, 0], -alpha * np.ones(size[i] - 2)))
-        c_diag = np.concatenate((
-                                [1],
-                                (1 + 2 * alpha) * np.ones(size[i] - 2),
-                                [1]
-                                ))
-        l_diag = np.concatenate((-alpha * np.ones(size[i] - 2), [0, 0]))
-        diag = np.array([u_diag, c_diag, l_diag])
-        sparse.append(spdiags(diag, [1, 0, -1], size[i], size[i]).tocsc())
-
-    # Diffuse image
-    for i in range(depth):
-        # Diffuse each column sequencially
-        # Possible to do all cols at the same time?
-        for j in range(size[1]):
-            new_view[:, j] = spsolve(sparse[0], new_view[:, j])
-
-        # Diffuse each row sequencially
-        # Possible to do all rows or everything at once?
-        for k in range(size[0]):
-            new_view[k, :] = spsolve(sparse[1], new_view[k, :])
-
-        # Return values of image to original where needed
-        new_view[~mask] = view[~mask]
-
-    # Return diffused image
-    return (new_img * 255).astype(np.uint8)
-
 
 
 if __name__ == "__main__":
@@ -226,5 +185,7 @@ if __name__ == "__main__":
     mask[2:4, 3:6] = False
     alpha = 0.5
     #print(img)
-    new_img = implisitt(img, n, mask, alpha)
+    img[:, :, 0] = implisitt(img[:, :, 0], n, mask, alpha)
+    #img[:, :, 1] = implisitt(img[:, :, 1], n, mask, alpha)
+    #img[:, :, 2] = implisitt(img[:, :, 2], n, mask, alpha)
     #print(new_img)

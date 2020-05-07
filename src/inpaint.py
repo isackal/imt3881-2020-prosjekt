@@ -30,7 +30,7 @@ def inpaint(img, depth, mask, alpha):
     if mask is None:  # No inpaint region specified, do no inpainting
         return img
     else:
-        return poisson.implisitt(img, depth, mask, alpha)
+        return poisson.explisitt(img, depth, mask, alpha)
 
 
 class Inpaint(md.Modifier):
@@ -49,7 +49,7 @@ class Inpaint(md.Modifier):
 
 #   Testfunksjon. Slett ved endelig release
 if __name__ == "__main__":
-    img = imageio.imread('../../../test2.png')
+    img = imageio.imread('../../test2.png')
 
     mask = np.zeros(img.shape[:2])
     mask[55:58, 207:213] = 1
@@ -62,6 +62,6 @@ if __name__ == "__main__":
     mask[88:91, 205:215] = 1
     mask[91:94, 207:213] = 1
 
-    new_img = inpaint(img, 10, mask, 3.5)
-    plt.imshow(new_img, cmap=plt.cm.gray)
+    new_img = inpaint(img, 500, mask, 0.24)
+    plt.imshow(new_img)
     plt.show()

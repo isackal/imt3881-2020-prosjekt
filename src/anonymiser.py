@@ -4,6 +4,7 @@ import cv2 as cv
 
 from blurring import blurring
 from colortogray import color_to_gray
+from grayscale import colorToGray
 
 #   Brukt for testfunksjon. Slett ved endelig release
 import imageio
@@ -119,7 +120,10 @@ def anonymisering(img):
             mask[y, x] = False
 
     # Return image after a blurring process is run in regions where faces are.
-    return blurring(img, 1, 50, mask)
+    img[:, :, 0] = blurring(img[:, :, 0], 2, 25, mask)
+    img[:, :, 1] = blurring(img[:, :, 1], 2, 25, mask)
+    img[:, :, 2] = blurring(img[:, :, 2], 2, 25, mask)
+    return img
 
 
 class Anonymisering(md.Modifier):
