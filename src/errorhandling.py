@@ -1,4 +1,5 @@
 import PyQt5.QtWidgets as wd
+import matplotlib
 
 
 LOGG = "logg.txt"
@@ -25,3 +26,9 @@ def displayWarning(warning):
         wd.QMessageBox.Ok
     )
     warning_dialog.exec_()
+
+
+def showImageData(img, message="no message"):
+    matplotlib.pyplot.title(message)
+    matplotlib.pyplot.imshow(img)
+    matplotlib.pyplot.show()

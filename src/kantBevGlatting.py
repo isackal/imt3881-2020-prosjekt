@@ -1,21 +1,22 @@
 import diffusion as df
 import numpy as np
 import modifiers as md
+import errorhandling as eh
 
 
 def BWKantBevGlatting(u, alpha=0.24, k=0.1, itr=1):
-    u1 = u.astype(float)/255
+    u1 = u*1  # Copy u so u is not modified:
     D = 1. / (1 + k * (df.gX(u1)**2 + df.gY(u1)**2))
     for i in range(itr):
         u1 = df.diffuse(u1, alpha, 0, D)
-    return (u1*255).astype(int)
+    return u1
 
 
 def RGBAKantBevGlatting(u, alpha=0.24, k=0.1, itr=1):
-    timg = np.zeros(u.shape, int)  # Transformed image
+    timg = np.zeros(u.shape)  # Transformed image
     for i in range(u.shape[2]):
         timg[:, :, i] = BWKantBevGlatting(u[:, :, i], alpha, k, itr)
-    return timg.astype(np.uint8)
+    return timg
 
 
 class KantbevarendeGlatting(md.Modifier):
@@ -24,11 +25,12 @@ class KantbevarendeGlatting(md.Modifier):
         self.name = "Kantbevarende Glatting"
         self.function = RGBAKantBevGlatting
         self.params = [
-            ("source", np.ndarray, None),
+            ("source", np.ndarray, None, md.FORMAT_RGBA),
             ("alpha", float, 0.24),
             ("kantbevaring", float, 100),
             ("iterasjoner", int, 10)
         ]
+        self.outputFormat = md.FORMAT_RGBA  # RGBA formatted output
         self.initDefaultValues()
 
 

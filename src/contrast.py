@@ -27,7 +27,7 @@ def contrast(img, n, k, alpha):
     np.ndarray
         Image with amplified contrast
     """
-    new_img = img.astype(float) / 255
+    new_img = img
     laplace_0 = (new_img[2:, 1:-1] +
                  new_img[:-2, 1:-1] +
                  new_img[1:-1, 2:] +
@@ -44,10 +44,11 @@ def contrast(img, n, k, alpha):
         new_img[1:-1, 1:-1] += alpha * (laplace - k * laplace_0)
 
     # Trim values outside scope
+
     new_img[new_img > 1] = 1
     new_img[new_img < 0] = 0
 
-    return (new_img * 255).astype(np.uint8)
+    return new_img
 
 
 class Contrast(md.Modifier):
@@ -56,9 +57,10 @@ class Contrast(md.Modifier):
         self.name = "Contrast"
         self.function = contrast
         self.params = [
-            ("img", np.ndarray, None),
+            ("img", np.ndarray, None, md.FORMAT_RGBA),
             ("iterations", int, 10),
             ("steepness", float, 5.0),
             ("alpha", float, 0.24)
         ]
+        self.outputFormat = md.FORMAT_RGBA
         self.initDefaultValues()
