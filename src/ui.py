@@ -915,7 +915,12 @@ class PipelineWidget(wd.QScrollArea):
         self.visible = False
         self.setHidden(True)
 
+    def onDelete(self):
+        for modifier in self.pipes:
+            modifier.deleteThis()
+
     def erase(self):
+        self.onDelete()
         self.deleteLater()
 
 
