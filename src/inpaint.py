@@ -42,10 +42,12 @@ class Inpaint(md.Modifier):
         self.name = "Inpaint"
         self.function = inpaint
         self.params = [
-            ("source", np.ndarray, None),
+            ("source", np.ndarray, None, md.FORMAT_RGBA),
             ("depth", int, 50),
-            ("mask", np.ndarray, None)
+            ("mask", np.ndarray, None, md.FORMAT_BOOL),
+            ("alpha", float, 0.2)
         ]
+        self.outputFormat = md.FORMAT_RGBA
         self.initDefaultValues()
 
 

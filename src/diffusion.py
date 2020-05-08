@@ -74,14 +74,14 @@ def pre_diffuse(u, mask, methode, rand, alpha, itr, h, D):
         new_view = u1[top:bottom, left:right]
         mask = mask[top:bottom, left:right]
 
-        if methode == 'e': #Explicitt diffusion
+        if methode == 'e':  #Explicitt diffusion
             for i in range(itr):
                 if len(u1.shape) > 2:
                     for j in range(3):
                         new_view[:, :, j] = explisitt(new_view[:, :, j], alpha, h, D)
                 else:
                     new_view[:] = explisitt(new_view[:], alpha, h, D)
-                
+
                 new_view[~mask] = view[~mask]
                 """
                 TO BE TESTED:
@@ -89,11 +89,12 @@ def pre_diffuse(u, mask, methode, rand, alpha, itr, h, D):
                 grayscale
                 Contrast
                 """
-        
-        elif methode == 'i': #Implisitt diffusion
+
+        elif methode == 'i':  # Implisitt diffusion
             pass
-    
+
     return u1
+
 
 def explisitt(u, alpha=0.24, h=0, D=1., dr=0):
     laplace = (
