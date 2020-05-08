@@ -21,7 +21,6 @@ import blurring
 import meanimage  # testmodule, delete later
 import kantBevGlatting as kbg
 import colortogray as ctg
-import grayscale as ctg2
 import demosaic
 import inpaint
 # import anonymiser  # temporary overlapping library bug on mac
@@ -39,17 +38,16 @@ MODIFIERS = [
     imageMath.Invert,
     imageMath.Multiplication,
     imageMath.Exponent,
-    imageMath.Procedural,
     imageMath.Diff,
     imageMath.Normalize,
     imageMath.ColorFilter,
+    imageMath.Mosaic,
     bitcrusher.Bitcrusher,
     contrast.Contrast,
     blurring.Blurring,
     meanimage.Meanimage,
     kbg.KantbevarendeGlatting,
-    ctg.Colortogray,
-    ctg2.CTG,
+    ctg.ColorToGray,
     demosaic.Demosaic,
     inpaint.Inpaint,
     # anonymiser.Anonymisering,
@@ -440,6 +438,7 @@ class imageFrame(cst.DragableWidget):
             self.picdata,
             self.picdata.shape[1],
             self.picdata.shape[0],
+            # Format:
             QtGui.QImage.Format_RGBA8888
         )
         self.piximg = QtGui.QPixmap(self.qimg)

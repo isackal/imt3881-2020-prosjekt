@@ -1,102 +1,48 @@
 import numpy as np
+import diffusion as df
 import modifiers as md
+import imageMath as imth
 
 
-def color_to_gray(img, n, alpha):
-    """
-    Converts image to grayscale
+def color_to_gray(u, alpha=0.24, itr=10, _k=1., epsilon=0.0001):
+    u0 = u*1
+    length = np.zeros(u[:, :, 0].shape)  # Gradienten lengde
+    vx = length * 0  # Retningen i x retning
+    vy = length * 0  # Retningen i y retning
+    colSum = length * 0
+    _max = np.sqrt(3)  # sqrt(3) if 3 channels (RGB)
 
-    Paramters
-    ---------
-    img : np.ndarray
-        Source image
-    n : int
-        Number of iterations (default = 100)
-    alpha : float
-        delta_t / delta_x**2 (default = 0.1)
-
-    Returns
-    -------
-    np.ndarray
-        Grayscale image
-    """
-    og_img = img[:, :, :3].astype(float) / 255
-
-    # Length of color vector
-    rgb_len = np.sum(og_img**2, axis=2)**0.5
-
-    # Find length of gradient
-    grad_len = np.ones((og_img.shape[0], og_img.shape[1]))
-
-    grad_len[1:, 1:] = np.sqrt(2 * rgb_len[1:, 1:] * (
-                               rgb_len[1:, 1:] -
-                               rgb_len[:-1, 1:] -
-                               rgb_len[1:, :-1]
-                               ) +
-                               rgb_len[:-1, 1:]**2 +
-                               rgb_len[1:, :-1]**2) / np.sqrt(3)
-    grad_len[0, :] = grad_len[1, :]
-    grad_len[:, 0] = grad_len[:, 1]
-
-    # Find direction
-    grad = np.ones((og_img.shape[0], og_img.shape[1], 2))
-    grad[1:, 1:, 0] = (np.sum(og_img[1:, 1:], axis=2) -
-                       np.sum(og_img[:-1, 1:], axis=2))
-    grad[1:, 1:, 1] = (np.sum(og_img[1:, 1:], axis=2) -
-                       np.sum(og_img[1:, :-1], axis=2))
-
-    unit_len = np.sum(grad[1:, 1:]**2, axis=2)**0.5
-    unit_len[unit_len == 0] = -1  # Prevent division by zero
-
-    # Complete gradient by setting length to previously found length
-    grad_len[1:, 1:] *= 1 / unit_len
-    grad_len[grad_len < 0] = 0  # Prevent division by zero
-    grad[1:, 1:, 0] *= grad_len[1:, 1:]
-    grad[1:, 1:, 1] *= grad_len[1:, 1:]
-    grad[0, :] = grad[1, :]
-    grad[:, 0] = grad[:, 1]
-
-    # h function is the gradient of grad
-    h = np.ones((og_img.shape[0], og_img.shape[1]))
-    h[1:, 1:] = (2 * np.sum(grad[1:, 1:], axis=2) -
-                 np.sum(grad[:-1, 1:], axis=2) - np.sum(grad[1:, :-1], axis=2))
-    h[0, :] = h[1, :]
-    h[:, 0] = h[:, 1]
-
-    # Init value, avrage of the three colors
-    new_img = np.sum(og_img, axis=2) / 3
-
-    for i in range(n):
-        laplace = (new_img[2:, 1:-1] +
-                   new_img[:-2, 1:-1] +
-                   new_img[1:-1, 2:] +
-                   new_img[1:-1, :-2] -
-                   4 * new_img[1:-1, 1:-1])
-
-        new_img[1:-1, 1:-1] += alpha * (laplace - h[1:-1, 1:-1])
-        new_img[0, :] = new_img[1, :]
-        new_img[-1, :] = new_img[-2, :]
-        new_img[:, 0] = new_img[:, 1]
-        new_img[:, -1] = new_img[:, -2]
-
-        # Trim values outside of range
-        new_img[new_img > 1] = 1
-        new_img[new_img < 0] = 0
-
-    new_img = (new_img * 255).astype(np.uint8)
-    alpha_channel = np.full(new_img.shape, 255, dtype=np.uint8)
-
-    return np.dstack((new_img, new_img, new_img, alpha_channel))
+    for i in range(3):
+        _gX = df.gX(u0[:, :, i])
+        _gY = df.gY(u0[:, :, i])
+        length += _gX**2 + _gY**2
+        colSum += u0[:, :, i]
+    length = np.sqrt(length) / _max
+    vx = df.gX(colSum) + epsilon
+    vy = df.gY(colSum)
+    cSize = np.sqrt(vx**2 + vy**2)
+    vx = length * vx / cSize
+    vy = length * vy / cSize
+    # g = (vx, vy)
+    # h = (d/dx)vx + (d/dy)vy
+    h = df.gX(vx) + df.gY(vy)
+    u1 = np.sum(u0, axis=2) / 3  # Initial case
+    # u1 = np.sqrt(np.sum(u0**2, axis=2))/_max  # vector ish
+    for i in range(itr):
+        u1 = df.diffuse(u1, alpha, - h*_k)
+    return u1
 
 
-class Colortogray(md.Modifier):
+class ColorToGray(md.Modifier):
     def __init__(self):
         super().__init__()
-        self.name = "color to gray"
+        self.name = "Color To Gray"
         self.function = color_to_gray
-        self.params = [
-            ("img", np.ndarray, None),
-            ("iterations", int, 100),
-            ("alpha", float, 0.1)
-        ]
+        self.params = (
+            ("source", np.ndarray, None, md.FORMAT_RGB),
+            ("Alpha", float, 0.2),
+            ("Iterations", int, 5),
+            ("K", float, 1)
+        )
+        self.outputFormat = md.FORMAT_BW
         self.initDefaultValues()
