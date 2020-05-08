@@ -1,6 +1,9 @@
 import numpy as np
 from scipy.sparse import spdiags
 from scipy.sparse.linalg import spsolve
+from scipy.sparse.linalg import inv
+from scipy.sparse.linalg import bicgstab
+import imageio
 
 
 def explTransform(views, alpha):
@@ -142,91 +145,47 @@ def implisitt(img, depth, mask, alpha):
     new_view = new_img[top:bottom, left:right]
     mask = mask[top:bottom, left:right]
 
-    # Get size of this new smaler image
-    size = view.shape[:2]
-    sparse = []
-    # Create a sparse matrix for columns and rows in picture
-    for i in range(2):
-        u_diag = np.concatenate(([0, 0], -alpha * np.ones(size[i] - 2)))
-        c_diag = np.concatenate((
-                                [1],
-                                (1 + 2 * alpha) * np.ones(size[i] - 2),
-                                [1]
+    shape = view.shape
+    # Create 1D array for matrix opperation on whole array
+    view = view.ravel()
+    new_view = new_view.ravel()
+    mask = mask.ravel()
+
+    size = view.shape[0]
+    nupperdiag = np.concatenate((np.zeros(shape[1]),
+                                -alpha * np.ones(size - shape[1])))
+    upperdiag = np.concatenate(([0, 0], -alpha * np.ones(size - 2)))
+    centerdiag = np.concatenate((
+                                    [1],
+                                    (1 + 4 * alpha) * np.ones(size - 2),
+                                    [1]
                                 ))
-        l_diag = np.concatenate((-alpha * np.ones(size[i] - 2), [0, 0]))
-        diag = np.array([u_diag, c_diag, l_diag])
-        sparse.append(spdiags(diag, [1, 0, -1], size[i], size[i]).tocsc())
+    lowerdiag = np.concatenate((-alpha * np.ones(size - 2), [0, 0]))
+    nlowerdiag = np.concatenate((-alpha * np.ones(size - shape[1]),
+                                np.zeros(shape[1])))
+    diag = np.array([nupperdiag, upperdiag, centerdiag, lowerdiag, nlowerdiag])
+    sparse = spdiags(diag, [shape[1], 1, 0, -1, -shape[1]], size, size).tocsc()
 
-    # Diffuse image
     for i in range(depth):
-        # Diffuse each column sequencially
-        # Possible to do all cols at the same time?
-        for j in range(size[1]):
-            new_view[:, j] = spsolve(sparse[0], new_view[:, j])
-
-        # Diffuse each row sequencially
-        # Possible to do all rows or everything at once?
-        for k in range(size[0]):
-            new_view[k, :] = spsolve(sparse[1], new_view[k, :])
-
-        # Return values of image to original where needed
+        new_view = spsolve(sparse, new_view)
         new_view[~mask] = view[~mask]
 
-    # Return diffused image
-    return (new_img * 255).astype(np.uint8)
-
-    '''
-    Forsøk med convertering av bilde til vektor og bruk av sparse matrix på hele vektoren. 
-    Fungerer fortsatt ikke, mulig memory issues.
-    new_img = img.astype(float) / 255
-    img = img.astype(float) / 255
-    mask = mask.astype(bool)
-    maskCords = np.argwhere(mask)
-    size = img.shape[:2]
-
-    # Reduce image size to region diffuse region, performance improvement
-    top = np.amin(maskCords[:, 0])
-    bottom = np.amax(maskCords[:, 0]) + 1
-    left = np.amin(maskCords[:, 1])
-    right = np.amax(maskCords[:, 1]) + 1
-    view = img[top:bottom, left:right]
-    new_view = new_img[top:bottom, left:right]
-    mask = mask[top:bottom, left:right]
-    size = view.shape
-
-    view = view.reshape((size[0]*size[1]*size[2], 1))
-    new_view = new_view.reshape((size[0]*size[1]*size[2], 1))
-
-    sidediag = np.concatenate(([0, 0], -alpha * np.ones(view.shape[0] - 2)))
-    centerdiag = np.concatenate((
-                                [1],
-                                (1 + 2 * alpha) * np.ones(view.shape[0] - 2),
-                                [1]
-                                ))
-    diag = np.array([sidediag, sidediag, centerdiag, sidediag, sidediag])
-    sparse = spdiags(
-                    diag, [size[1], 1, 0, -1, -size[1]],
-                    view.shape[0], view.shape[0]
-                    ).tocsc()
-
-    new_view = spsolve(sparse, new_view)
-
-    new_view = new_view.reshape((size[0], size[1], size[2]))
+    new_view = np.asarray(new_view).reshape(shape)
     new_img[top:bottom, left:right] = new_view
 
     return (new_img * 255).astype(np.uint8)
-    '''
 
 
 if __name__ == "__main__":
-    img = np.arange(45)
-    img = img.reshape((3, 5, 3))
+    img = np.array(imageio.imread("../../Small_grayScale.png"))
     #img = np.array(imageio.imread("test.png"))
-    #img[1:4, 1:9] = 0
+    img[1:4, 1:9] = 0
     n = 2
     mask = np.ones((5, 10)).astype(bool)
     mask[2:4, 3:6] = False
     alpha = 0.5
-    print(img)
-    new_img = implisitt(img, n, mask, alpha)
-    print(new_img)
+    #print(img)
+    img[:, :, 0] = implisitt(img[:, :, 0], n, mask, alpha)
+    #img[:, :, 1] = implisitt(img[:, :, 1], n, mask, alpha)
+    #img[:, :, 2] = implisitt(img[:, :, 2], n, mask, alpha)
+    #print(new_img)

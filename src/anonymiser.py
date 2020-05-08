@@ -4,6 +4,7 @@ import cv2 as cv
 
 from blurring import blurring
 from colortogray import color_to_gray
+from grayscale import colorToGray
 
 #   Brukt for testfunksjon. Slett ved endelig release
 import imageio
@@ -64,14 +65,14 @@ def anonymisering(img):
 
     # Find position and size of eyes and faces in the image as np.ndarray
     faces = face_cascade.detectMultiScale(gray, 1.02, 5)
-    eyes = eye_cascade.detectMultiScale(gray, 1.1, 3)
+    eyes = eye_cascade.detectMultiScale(gray, 1.02, 5)
     size = mask.shape[:2]
 
     # If a face is found, create a blurring mask in that region.
     # Some chance of false positives, but priority on blurring to much
     # More important to ensure everything that needs to be blurred is blurred.
     for (x, y, w, h) in faces:
-        mask[y:y+h, x:x+w] = circularMask(h, w)
+        mask[y:y+int(1.1*h), x:x+w] += circularMask(int(1.1*h), w)
 
     # Mark all places where ML algorithm think there is an eye
     for (x, y, w, h) in eyes:
@@ -87,23 +88,42 @@ def anonymisering(img):
         right = int(min(size[1], x+(2.2*w)))
 
         # Find out how many values are true in the region
-        a = np.argwhere(mask[top:bottom, left:right])
+        eyesDetected = np.argwhere(mask[top:bottom, left:right])
 
         # If it found another eye in the region create a mask to anonymize
-        if(a.shape[0] == 2):
-            top -= h
-            bottom += int(2*h)
-            mask[top:bottom, left:right] = circularMask(bottom-top, right-left)
+        if(eyesDetected.shape[0] == 2):
+            # Find midpoint between the eyes
+            top += int((eyesDetected[0, 0] + eyesDetected[1, 0])*.5)
+            left += int((eyesDetected[0, 1] + eyesDetected[1, 1])*.5)
+
+            # Create region around midpoint of eyes where blurring should occur
+            bottom = min(size[0], top+3*h)
+            top = max(0, top-h)
+            right = min(size[1], left+3*w)
+            left = max(0, left-w)
+
+            # Delta height and width
+            dh = bottom-top
+            dw = right-left
+
+            # create blurring mask. Larger than for face blurring above
+            # to ensure whole face is blurred
+            mask[top:bottom, left:right] += circularMask(dh, dw)
 
         # Skip regions where a mask is already created
-        elif(a.shape[0] > 2):
+        # Also prevents some false positives
+        elif(eyesDetected.shape[0] > 2):
             pass
+
         # If no other eye found, prevent region from being blurred at all
         else:
             mask[y, x] = False
 
     # Return image after a blurring process is run in regions where faces are.
-    return blurring(img, 1, 50, mask)
+    img[:, :, 0] = blurring(img[:, :, 0], 2, 25, mask)
+    img[:, :, 1] = blurring(img[:, :, 1], 2, 25, mask)
+    img[:, :, 2] = blurring(img[:, :, 2], 2, 25, mask)
+    return img
 
 
 class Anonymisering(md.Modifier):
