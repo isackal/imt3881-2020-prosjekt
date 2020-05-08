@@ -42,6 +42,7 @@ MODIFIERS = [
     imageMath.Normalize,
     imageMath.ColorFilter,
     imageMath.Mosaic,
+    imageMath.Noise,
     bitcrusher.Bitcrusher,
     contrast.Contrast,
     blurring.Blurring,
@@ -285,7 +286,6 @@ class ModifierWidget(Collapser):
         pimg = self.img.src  # parent-image. Assumed to not be None
         # parent second is assumed to me first
         self.img.disconnectParent()
-        self.masterLayout.removeWidget(self)
         for _inp in self.dtas:
             _inp.onDelete()
         child = None
@@ -299,7 +299,7 @@ class ModifierWidget(Collapser):
                 self.widgetPipeline.at = pimg
                 BIG_IMAGE.disconnectParent()
                 pimg.connect(BIG_IMAGE)
-        print("Pipes length %d" % len(pimg.pipes))
+            self.masterLayout.removeWidget(self)
         pimg.pipe()
         self.deleteLater()
 

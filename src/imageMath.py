@@ -6,9 +6,18 @@ import errorhandling as eh
 """
 The following modifiers play an essential role in the interactivity in the
 app, and will therefore be included in the final product.
-Eg. the procedural module is meant for the user to be able to add
+Eg. the noise module is meant for the user to be able to add
 noise to images to test different smoothing methods.
 """
+
+
+def addNoise(img, seed, minVal, maxVal):
+    np.random.seed(seed)
+    _rng = maxVal - minVal  # Range of the noise
+    _rand = np.random.rand(*list(img.shape))*_rng + minVal
+    img2 = img*1
+    img2[:, :, :3] += _rand[:, :, :3]
+    return img2
 
 
 def mosaic_get_green(img):
@@ -375,6 +384,21 @@ class Mosaic(md.Modifier):
             ("Red", float, 1.),
             ("Green", float, 1.),
             ("Blue", float, 1.)
+        ]
+        self.outputFormat = md.FORMAT_RGBA
+        self.initDefaultValues()
+
+
+class Noise(md.Modifier):
+    def __init__(self):
+        super().__init__()
+        self.name = "Noise"
+        self.function = addNoise
+        self.params = [
+            ("source", np.ndarray, None, md.FORMAT_RGBA),
+            ("seed", int, 0),
+            ("min", float, -0.1),
+            ("max", float, 0.1)
         ]
         self.outputFormat = md.FORMAT_RGBA
         self.initDefaultValues()
