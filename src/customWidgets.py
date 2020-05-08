@@ -114,6 +114,21 @@ class MiniButton(wd.QLabel):
         self.setPixmap(self.piximg)
 
 
+def removeFromPacklist(widget):
+    """
+    Remove widget from a packlist if a packlist (masterlayout)
+    is assigned.
+    """
+    try:
+        widget.masterLayout
+    except Exception:
+        # Do nothing because then there is no masterLayout to disconnect
+        pass
+    else:
+        if widget.masterLayout is not None:
+            widget.masterLayout.removeWidget(widget)
+
+
 class Packlist(wd.QWidget):
 
     def __init__(self, parent, layout=wd.QVBoxLayout, spacing=1):

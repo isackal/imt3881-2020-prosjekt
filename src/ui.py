@@ -210,6 +210,10 @@ class TypeInput(wd.QWidget):
         else:
             self.widget.setText(str(val))
 
+    def onDelete(self):
+        if self.isImage:
+            self.widget.onDelete()
+
 
 class ModifierWidget(Collapser):
     """
@@ -283,6 +287,8 @@ class ModifierWidget(Collapser):
         child = self.masterLayout.next(self)  # child second
         self.img.disconnectParent()
         self.masterLayout.removeWidget(self)
+        for _inp in self.dtas:
+            _inp.onDelete()
 
         if child is not None:
             child.img.disconnectParent()
@@ -726,8 +732,14 @@ class imageFrame(cst.DragableWidget):
         GLOBAL_IMAGES.remove(self)
         self.deleteLater()
 
+    def onDelete(self):
+        global GLOBAL_IMAGES
+        self.disconnectParent()
+        self.disconnectChildren()
+        cst.removeFromPacklist(self)
+
     def __del__(self):
-        self.disconnectParent()  # TODO
+        self.onDelete()
 
 
 class ReferenceImage(wd.QLabel):  # $rfi
