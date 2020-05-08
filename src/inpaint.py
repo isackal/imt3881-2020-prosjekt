@@ -1,13 +1,14 @@
 import numpy as np
 import modifiers as md
 import poisson
+import diffusion
 
 #   Brukt for testfunksjon. Slett ved endelig release
 import imageio
 import matplotlib.pyplot as plt
 
 
-def inpaint(img, depth, mask, alpha):
+def inpaint(img, itr, mask, alpha):
     """
     Blurs the image
 
@@ -30,8 +31,9 @@ def inpaint(img, depth, mask, alpha):
     if mask is None:  # No inpaint region specified, do no inpainting
         return img
     else:
-        return poisson.explisitt(img, depth, mask, alpha)
-
+        #for i in range(3):
+            #img[:, :, i] = diffusion.pre_diffuse(img[:, :, i], mask, 'e', 'n', alpha, itr, 0, 1.)
+        return diffusion.pre_diffuse(img, mask, 'e', 'n', alpha, itr, 0, 1.)
 
 class Inpaint(md.Modifier):
     #   read usage in ../modifiers.py
@@ -49,7 +51,7 @@ class Inpaint(md.Modifier):
 
 #   Testfunksjon. Slett ved endelig release
 if __name__ == "__main__":
-    img = imageio.imread('../../test2.png')
+    img = imageio.imread('../../test2.png').astype(float) / 255
 
     mask = np.zeros(img.shape[:2])
     mask[55:58, 207:213] = 1
