@@ -155,7 +155,7 @@ def makeMask(
             weightGreen,
             weightBlue,
             weightAlpha
-        ) > 0.5
+        ) > threshold
     return gsc
 
 
@@ -265,7 +265,7 @@ class Binary(md.Modifier):
             ("Green", float, 1),
             ("Blue", float, 1),
             ("Alpha", float, 0),
-            ("Threshold", int, 127)
+            ("Threshold", float, 0.5)
         ]
         self.outputFormat = md.FORMAT_BOOL
         self.initDefaultValues()

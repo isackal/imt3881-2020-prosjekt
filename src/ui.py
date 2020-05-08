@@ -284,23 +284,23 @@ class ModifierWidget(Collapser):
         global BIG_IMAGE
         pimg = self.img.src  # parent-image. Assumed to not be None
         # parent second is assumed to me first
-        child = self.masterLayout.next(self)  # child second
         self.img.disconnectParent()
         self.masterLayout.removeWidget(self)
         for _inp in self.dtas:
             _inp.onDelete()
-
-        if child is not None:
-            child.img.disconnectParent()
-            pimg.connect(child.img)
-            child.reference = pimg
-        else:
-            self.widgetPipeline.at = pimg
-            BIG_IMAGE.disconnectParent()
-            pimg.connect(BIG_IMAGE)
+        child = None
+        if self.masterLayout is not None:
+            child = self.masterLayout.next(self)  # child second
+            if child is not None:
+                child.img.disconnectParent()
+                pimg.connect(child.img)
+                child.reference = pimg
+            else:
+                self.widgetPipeline.at = pimg
+                BIG_IMAGE.disconnectParent()
+                pimg.connect(BIG_IMAGE)
         print("Pipes length %d" % len(pimg.pipes))
         pimg.pipe()
-
         self.deleteLater()
 
     def mainUI(self):
