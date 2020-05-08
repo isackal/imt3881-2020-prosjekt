@@ -5,6 +5,7 @@ import cv2 as cv
 from blurring import blurring
 from colortogray import color_to_gray
 from grayscale import colorToGray
+import diffusion
 
 #   Brukt for testfunksjon. Slett ved endelig release
 import imageio
@@ -118,12 +119,15 @@ def anonymisering(img):
         # If no other eye found, prevent region from being blurred at all
         else:
             mask[y, x] = False
-
+    itr = 50
+    alpha = 0.24
+    img = img.astype(float) / 255
     # Return image after a blurring process is run in regions where faces are.
-    img[:, :, 0] = blurring(img[:, :, 0], 2, 25, mask)
-    img[:, :, 1] = blurring(img[:, :, 1], 2, 25, mask)
-    img[:, :, 2] = blurring(img[:, :, 2], 2, 25, mask)
-    return img
+    #for i in range(3):
+    #    img[:, :, i] = diffusion.pre_diffuse(img[:, :, i], mask, 'e', 'n', alpha, itr, 0, 1.)
+    #img[:, :, 1] = blurring(img[:, :, 1], 2, 25, mask)
+    #img[:, :, 2] = blurring(img[:, :, 2], 2, 25, mask)
+    return diffusion.pre_diffuse(img, mask, 'e', 'n', alpha, itr, 0, 1.)
 
 
 class Anonymisering(md.Modifier):
@@ -140,7 +144,7 @@ class Anonymisering(md.Modifier):
 
 #   Testfunksjon. Slett ved endelig release
 if __name__ == "__main__":
-    img = np.array(imageio.imread('../../People.jpg'))  # this file does not exist
+    img = np.array(imageio.imread('../../People.jpg')) # this file does not exist
     # TODO upload the image to testimages folder :)
     new_img = anonymisering(img)
     plt.imshow(new_img)

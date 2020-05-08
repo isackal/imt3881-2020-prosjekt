@@ -14,15 +14,17 @@ def demosaic(red, green, blue):
     blueMask = ~blue.astype(bool)
     img = np.zeros((red.shape[0], red.shape[1], 3))
 
-    new_red = inpaint(red, 50, redMask, 0.24)
-    new_green = inpaint(green, 50, greenMask, 0.24)
-    new_blue = inpaint(blue, 50, blueMask, 0.24)
+    new_red = inpaint(red, 10, redMask, 0.24)
+    new_green = inpaint(green, 10, greenMask, 0.24)
+    new_blue = inpaint(blue, 10, blueMask, 0.24)
+    
 
+    
     img[:, :, 0] = new_red
     img[:, :, 1] = new_green
     img[:, :, 2] = new_blue
-
-    return img.astype(np.uint8)
+    
+    return img
 
 
 class Demosaic(md.Modifier):
@@ -41,7 +43,7 @@ class Demosaic(md.Modifier):
 
 #   Testfunksjon. Slett ved endelig release
 if __name__ == "__main__":
-    img = imageio.imread('../../face.png')
+    img = imageio.imread('../../face.png').astype(float) / 255
     red = np.zeros(img.shape[:2])
     blue = np.zeros(img.shape[:2])
     green = np.zeros(img.shape[:2])
