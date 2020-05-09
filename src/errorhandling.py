@@ -30,5 +30,5 @@ def displayWarning(warning):
 
 def showImageData(img, message="no message"):
     plt.title(message)
-    plt.imshow(img, plt.cm.gray)
+    plt.imshow(img)
     plt.show()

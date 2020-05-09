@@ -9,6 +9,25 @@ FORMAT_BOOL = 3
 FORMAT_MASK = FORMAT_BOOL
 
 
+class Limit:
+    def __init__(self, _type, _min, _max):
+        self._type = _type
+        self._min = _min
+        self._max = _max
+
+    def clamp(self, val):
+        if val > self._max:
+            return self._max
+        elif val < self._min:
+            return self._min
+        else:
+            return val
+
+
+def clamp(lim, val):
+    return lim.clamp(val)
+
+
 class Modifier:
     def __init__(self):
         """
@@ -74,6 +93,9 @@ class Modifier:
                 else:
                     # Does the same assumtion as above.
                     _values.append(self.values[j][:, :, 0] > 127)
+            elif type(i[1]) is Limit:
+                self.values[j] = clamp(i[1], self.values[j])
+                _values.append(self.values[j])
             else:
                 _values.append(self.values[j])
 

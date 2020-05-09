@@ -172,6 +172,9 @@ class TypeInput(wd.QWidget):
                 zoomable=False,
                 toolsEnabled=False
             )
+            # not possible to use as source, as it would just be a copy
+            # of the original image:
+            self.widget.sourceAble = False
             self.widget.setSize(64, 64)
             self.setFixedWidth(64)
             self.setFixedHeight(64)
@@ -281,6 +284,14 @@ class ModifierWidget(Collapser):
             first.img.connect(BIG_IMAGE)
             self.widgetPipeline.at = first.img
 
+    def onDelete(self):
+        self.img.disconnectParent()
+        self.img.disconnectChildren()
+        # Delete input connections:
+        for _inp in self.dtas:
+            _inp.onDelete()
+
+
     def deleteThis(self, event=None):
         global BIG_IMAGE
         pimg = self.img.src  # parent-image. Assumed to not be None
@@ -336,10 +347,12 @@ class ModifierWidget(Collapser):
         self.content.addWidget(_add)
         self.img.modifier = self.modifier
 
-    def onUpdateData(self):
+    def onUpdateData(self, pipeTrace=None):
+        if pipeTrace is None:
+            pipeTrace = []
         for i in range(len(self.modifier.values)-1):
             self.modifier.values[i+1] = self.dtas[i].getValue()
-        self.reference.pipe()
+        self.reference.pipe(pipeTrace)
 
     def onUpdateText(self, text):
         self.onUpdateData()
@@ -390,6 +403,7 @@ class imageFrame(cst.DragableWidget):
         self.inputAble = True  # Can be dragged and used as input
         self.onPipe = cst.noFunction
         self.isDeleted = False
+        self.sourceAble = True  # If true, this image can be selected as input.
 
     def pipeToGroup(self, grp):
         grp.append(self)
@@ -655,25 +669,47 @@ class imageFrame(cst.DragableWidget):
             SELECTED = None
             self.bigImg.disconnectParent()
 
-    def pipeOnce(self):
-        for child in self.pipes:
-            print("Sending data to %s" % child.title)
-            child.setData(self.picdata)
-        if self.onPipe is not None:
-            self.onPipe()
+    def pipeOnce(self, pipeTrace=None):
+        if pipeTrace is None:
+            pipeTrace = []
+        if self not in pipeTrace:
+            pipeTrace.append(self)
+            for child in self.pipes:
+                print("Sending data to %s" % child.title)
+                child.setData(self.picdata)
+            if self.onPipe is not None:
+                self.onPipe(pipeTrace)
+        return pipeTrace
 
-    def pipe(self):
-        if self.isDeleted:
-            print("Why am I still alive?")
-            sys.exit(1)
-        print("\n\nPiping")
-        print(self.zoomable)
-        for child in self.pipes:
-            print("Sending data to %s" % child.title)
-            child.setData(self.picdata)
-            child.pipe()
-        if self.onPipe is not None:
-            self.onPipe()
+    def pipe(self, pipeTrace=None):
+        """
+        Pipe data to connected children.
+        
+        Parameters
+        ----------
+        pipeTrace :     Trace what modifiers has been run through a pipeline.
+                        This is done to make sure no modifier widget can pipe more than once
+                        per pipe "round"
+
+        """
+        if pipeTrace is None:
+            pipeTrace = []
+        if self not in pipeTrace:
+            print("I am not in pipetrace")
+            if self.isDeleted:
+                print("Why am I still alive?")
+                sys.exit(1)
+            print("\n\nPiping")
+            print(self.zoomable)
+            pipeTrace.append(self)
+            for child in self.pipes:
+                print("Sending data to %s" % child.title)
+                child.setData(self.picdata)
+                child.pipe(pipeTrace)
+            if self.onPipe is not None:
+                self.onPipe(pipeTrace)
+        print(pipeTrace)
+        return pipeTrace
 
     def modify(self):
         print(")))")
@@ -917,7 +953,7 @@ class PipelineWidget(wd.QScrollArea):
 
     def onDelete(self):
         for modifier in self.pipes:
-            modifier.deleteThis()
+            modifier.onDelete()
 
     def erase(self):
         self.onDelete()
@@ -1074,6 +1110,7 @@ class SelectImageDialog(wd.QDialog):  # $sid
         self.InitWindow()
 
     def mainUI(self):
+        global GLOBAL_IMAGES
         self.imgSelected = False
         images = cst.Packlist(self)
         images.select = None  # Requiered
@@ -1105,11 +1142,12 @@ class SelectImageDialog(wd.QDialog):  # $sid
         rightSide.addWidget(buttons)
         playout.addWidget(rightWidget)
         self.select = None
-        for imgFrm in GLOBAL_IMAGES:
-            imgs = imgFrm.getImageGroup()
-            for img in imgs:
-                _add = ReferenceImage(self, img)
-                images.addWidget(_add)
+        for imgFrm in GLOBAL_IMAGES:  # For each image frame:
+            imgs = imgFrm.getImageGroup()  # Get list of images in its pipeline
+            for img in imgs:  # For each of these images:
+                if img.sourceAble:
+                    _add = ReferenceImage(self, img)
+                    images.addWidget(_add)
 
     def InitWindow(self):
         self.setWindowTitle(self.title)
