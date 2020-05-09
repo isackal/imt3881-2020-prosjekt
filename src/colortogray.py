@@ -2,6 +2,8 @@ import numpy as np
 import diffusion as df
 import modifiers as md
 import imageMath as imth
+import errorhandling as eh
+import imageio as im
 
 
 def color_to_gray(u, alpha=0.2, itr=3, _k=1., epsilon=0.0001):
@@ -41,8 +43,13 @@ class ColorToGray(md.Modifier):
         self.params = (
             ("source", np.ndarray, None, md.FORMAT_RGB),
             ("Alpha", float, 0.2),
-            ("Iterations", int, 5),
+            ("Iterations", int, 3),
             ("K", float, 1)
         )
         self.outputFormat = md.FORMAT_BW
         self.initDefaultValues()
+
+if __name__ == "__main__":
+    img = im.imread("../hdr-bilder/Ocean/Ocean_02048.png").astype(float)/255
+    gray = color_to_gray(img)
+    eh.showImageData(gray,"hmmmm")

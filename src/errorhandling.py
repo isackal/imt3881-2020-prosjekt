@@ -1,5 +1,5 @@
 import PyQt5.QtWidgets as wd
-import matplotlib
+import matplotlib.pyplot as plt
 
 
 LOGG = "logg.txt"
@@ -29,6 +29,6 @@ def displayWarning(warning):
 
 
 def showImageData(img, message="no message"):
-    matplotlib.pyplot.title(message)
-    matplotlib.pyplot.imshow(img)
-    matplotlib.pyplot.show()
+    plt.title(message)
+    plt.imshow(img, plt.cm.gray)
+    plt.show()
