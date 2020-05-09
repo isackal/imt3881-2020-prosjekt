@@ -4,7 +4,7 @@ import modifiers as md
 import imageMath as imth
 
 
-def color_to_gray(u, alpha=0.24, itr=10, _k=1., epsilon=0.0001):
+def color_to_gray(u, alpha=0.2, itr=3, _k=1., epsilon=0.0001):
     u0 = u*1
     length = np.zeros(u[:, :, 0].shape)  # Gradienten lengde
     vx = length * 0  # Retningen i x retning
@@ -30,7 +30,7 @@ def color_to_gray(u, alpha=0.24, itr=10, _k=1., epsilon=0.0001):
     # u1 = np.sqrt(np.sum(u0**2, axis=2))/_max  # vector ish
     for i in range(itr):
         u1 = df.diffuse(u1, alpha, - h*_k)
-    return u1
+    return np.clip(u1, 0, 1)
 
 
 class ColorToGray(md.Modifier):
