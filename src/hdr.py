@@ -3,6 +3,7 @@ import random
 import erh as eh  # for error handling
 import os
 import imageio as im
+import matplotlib.pyplot as plt
 
 
 Z_MIN = 0
@@ -46,7 +47,7 @@ def loadImages(folder):
     return (images, dt)
 
 
-def getZ(imgDtPairs, amount, seed=23):
+def getZT(imgDtPairs, amount, seed=23):
     """
     Get Z
 
@@ -58,9 +59,30 @@ def getZ(imgDtPairs, amount, seed=23):
     """
     # Z = np.zeros((sampleSize, 3, len(imgDtPairs[0])))
     np.random.seed(seed)
-    _mask = np.random.rand(*list(imgDtPairs[0][0].shape)) <= amount
-    _sum = np.sum(_mask)
-    Z = np.zeros((_sum, len(imgDtPairs[1])), np.int32)
+    _mask = np.random.rand(*list(imgDtPairs[0][0].shape[:2]))
+    __mask = None
+    _sum = 0
+    epsilon = 0.000001
+    pmin=0.
+    pmax=100.
+    while ((_sum != amount) and ((pmax-pmin)**2 > epsilon**2)):
+        pmid = (pmin + pmax)/2
+        __mask = _mask <= pmid
+        _sum = np.sum(__mask)
+        if _sum > amount:
+            pmax = pmid
+        else:
+            pmin = pmid
+    Z = np.zeros((_sum, len(imgDtPairs[1]), 3), np.int32)
+    print(Z.shape)
+    dt = np.zeros(len(imgDtPairs[1]))
+    for i in range(len(imgDtPairs[0])):
+        _img = imgDtPairs[0][i]
+        Z[:, i, 0] = _img[:, :, 0][__mask]
+        Z[:, i, 1] = _img[:, :, 1][__mask]
+        Z[:, i, 2] = _img[:, :, 2][__mask]
+        dt[i] = imgDtPairs[1][i]
+    return Z, dt
 
 
 def w(pixel_value, z_min=Z_MIN, z_max=Z_MAX):
@@ -81,7 +103,7 @@ def w(pixel_value, z_min=Z_MIN, z_max=Z_MAX):
     return z_max - pixel_value
 
 
-def objective(Z, B, l):
+def objective(Z, B, l=0.2):
     """
     Finds response function g and log irradiance values
 
@@ -107,7 +129,8 @@ def objective(Z, B, l):
     """
     n = 256
 
-    A = np.zeros((Z.shape[0] * Z.shape[1] + n - 1, Z.shape[0] + n))
+    A = np.zeros((Z.shape[0] * Z.shape[1] + n + 1, Z.shape[0] + n))
+    print(A.shape)
     b = np.zeros(A.shape[0])
 
     # Include the data-fitting equations
@@ -118,12 +141,12 @@ def objective(Z, B, l):
             w_ij = w(Z[i, j] + 1)
             A[k, Z[i, j]] = w_ij
             A[k, n + i] = -w_ij
-            b[k, 0] = w_ij * B[j]
+            b[k] = w_ij * B[j]
             k += 1
 
     # Fix the curve by setting its middle value to 0
 
-    A[k, 129] = 1
+    A[k, 128] = 1
     k += 1
 
     # Include the smoothness equations
@@ -135,16 +158,32 @@ def objective(Z, B, l):
         k += 1
 
     # Solve the system
-    """
     inv_A = np.linalg.pinv(A)
     x = np.dot(inv_A, b)
-    """
-    x = np.linalg.solve(A, b)
 
-    g = x[0:n+1]
+    g = x[0:n]
     lE = x[n:]
 
     return g, lE
+
+
+def reconstruct(itp, g, channel=0):
+    lnE = np.zeros(itp[0][0].shape[:2])
+    _s = 0  # progress bar
+    _itrs = lnE.shape[0]*lnE.shape[1]*len(itp[0])
+    for x in range(lnE.shape[0]):
+        for y in range(lnE.shape[1]):
+            lnEiu = 0
+            lnEid = 0.0000001  # To make sure not divide by 0
+            for j in range(len(itp[0])):
+                Zij = itp[0][j][x, y, channel]  # Pixel value
+                lnEiu += w(Zij)*(g[Zij] - np.log(itp[1][j]))
+                lnEid += w(Zij)
+                _s += 1
+                if (_s%100000 == 0):
+                    print(("\tProgress %.8f" % (100.*_s / _itrs)) +'%' , end='\r')
+            lnE[x, y] = lnEiu / lnEid
+    return lnE
 
 
 def intensitySample(images):
@@ -205,5 +244,20 @@ def hdr(images, ex, l):
     return hdr_img.astype(np.uint8)
 
 if __name__ == "__main__":
+    _x = np.arange(0,256, 1, int)
     imgs = loadImages("../hdr-bilder/Ocean")
-    getZ(imgs, 0.05)
+    print("Creating sample set:")
+    z, t = getZT(imgs, 2500)
+    # eh.showImageData(z, "hm")
+    smoothing = 20
+    print("Get R response curve")
+    gR, lE = objective(z[:, :, 0], t, smoothing)
+    plt.plot(_x, gR)
+    plt.show()
+    lnE = reconstruct(imgs, gR, 0)
+    hdrImage = np.exp(lnE)
+    print(np.max(hdrImage))
+    plt.imshow(lnE)
+    plt.show()
+    plt.imshow(hdrImage)
+    plt.show()
