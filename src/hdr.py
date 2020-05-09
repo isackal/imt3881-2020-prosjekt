@@ -1,9 +1,66 @@
 import numpy as np
 import random
+import erh as eh  # for error handling
+import os
+import imageio as im
 
 
 Z_MIN = 0
 Z_MAX = 255
+
+def loadImages(folder):
+    """
+    Load images from a folder and returns them.
+    the exposure time dt is part of the file name.
+    """
+    images = []
+    dt = []
+    files = os.listdir(folder)
+    for file in files:
+        if ".png" not in file:
+            continue
+        _fl = folder+"/"+file
+        print(_fl)
+        img = im.imread(folder+"/"+file)
+        _dt = 0
+        _mod = 1
+        for char in file[::-1][4:]:
+            if char == '_':
+                break
+            _dt += (ord(char)-ord('0')) * _mod
+            _mod *= 10
+        images.append(img)
+        dt.append(_dt)
+    # Sort:
+    for i in range(1,len(dt)):
+        _img = images[i]
+        _dt = dt[i]
+        j = i
+        while (j>0 and (dt[j-1]>_dt)):
+            dt[j] = dt[j-1]
+            images[j] = images[j-1]
+            j -= 1
+        dt[j]=_dt
+        images[j]=_img
+    
+    return (images, dt)
+
+
+def getZ(imgDtPairs, amount, seed=23):
+    """
+    Get Z
+
+    Parameters
+    ----------
+    imgDtPairs : pair of two lists, images and delta times
+    amount     : between 0 and 1, selets random samples proportional to this parameter.
+    Select pixel samples from the images and return z
+    """
+    # Z = np.zeros((sampleSize, 3, len(imgDtPairs[0])))
+    np.random.seed(seed)
+    _mask = np.random.rand(*list(imgDtPairs[0][0].shape)) <= amount
+    _sum = np.sum(_mask)
+    Z = np.zeros((_sum, len(imgDtPairs[1])), np.int32)
 
 
 def w(pixel_value, z_min=Z_MIN, z_max=Z_MAX):
@@ -51,7 +108,7 @@ def objective(Z, B, l):
     n = 256
 
     A = np.zeros((Z.shape[0] * Z.shape[1] + n - 1, Z.shape[0] + n))
-    b = np.zeros((A.shape[0], 1))
+    b = np.zeros(A.shape[0])
 
     # Include the data-fitting equations
 
@@ -59,7 +116,7 @@ def objective(Z, B, l):
     for i in range(Z.shape[0]):
         for j in range(Z.shape[1]):
             w_ij = w(Z[i, j] + 1)
-            A[k, Z[i, j] + 1] = w_ij
+            A[k, Z[i, j]] = w_ij
             A[k, n + i] = -w_ij
             b[k, 0] = w_ij * B[j]
             k += 1
@@ -78,8 +135,11 @@ def objective(Z, B, l):
         k += 1
 
     # Solve the system
+    """
     inv_A = np.linalg.pinv(A)
     x = np.dot(inv_A, b)
+    """
+    x = np.linalg.solve(A, b)
 
     g = x[0:n+1]
     lE = x[n:]
@@ -143,3 +203,7 @@ def hdr(images, ex, l):
     hdr_img[hdr_img < 0] = 0
 
     return hdr_img.astype(np.uint8)
+
+if __name__ == "__main__":
+    imgs = loadImages("../hdr-bilder/Ocean")
+    getZ(imgs, 0.05)

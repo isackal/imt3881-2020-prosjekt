@@ -1,0 +1,2 @@
+WARNING:['diffusion.py', 'inpaint.py', 'test.bat', 'grayscale.py', 'erh.py', 'poisson.py', 'ui.py', 'cloning.py', '__pycache__', 'test.py', 'xpr.py', 'README.md', 'customWidgets.py', 'anonymiser.py', 'meanimage.py', 'demosaic.py', 'kantBevGlatting.py', 'modifiers.py', 'hdr.py', 'colortogray.py', 'bitcrusher.py', 'main.py', 'modules', 'contrast.py', 'blurring.py']
+
