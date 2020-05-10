@@ -31,7 +31,7 @@ def inpaint(img, itr, mask, alpha):
     if mask is None:  # No inpaint region specified, do no inpainting
         return img
     else:
-        return diffusion.pre_diffuse(img, mask, alpha=alpha, itr=itr)
+        return diffusion.pre_diffuse(img, mask, alpha=alpha, itr=itr, met='e')
 
 
 class Inpaint(md.Modifier):
@@ -65,6 +65,6 @@ if __name__ == "__main__":
     mask[88:91, 205:215] = 1
     mask[91:94, 207:213] = 1
 
-    new_img = inpaint(img, 500, mask, 0.24)
+    new_img = inpaint(img, 1, mask, 10)
     plt.imshow(new_img)
     plt.show()

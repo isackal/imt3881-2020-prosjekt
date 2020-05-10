@@ -43,7 +43,9 @@ class Demosaic(md.Modifier):
 
 #   Testfunksjon. Slett ved endelig release
 if __name__ == "__main__":
-    img = imageio.imread('../../face.png').astype(float) / 255
+    img = imageio.imread('../testimages/mosaic_raccoon.png').astype(float) / 255
+
+    """
     red = np.zeros(img.shape[:2])
     blue = np.zeros(img.shape[:2])
     green = np.zeros(img.shape[:2])
@@ -51,7 +53,7 @@ if __name__ == "__main__":
     green[1::2, ::2] = img[1::2, ::2, 1]
     green[::2, 1::2] = img[::2, 1::2, 1]
     blue[1::2, 1::2] = img[1::2, 1::2, 2]
-
-    new_img = demosaic(red, green, blue)
+    """
+    new_img = demosaic(img[:, :, 0], img[:, :, 1], img[:, :, 2])
     plt.imshow(new_img)
     plt.show()

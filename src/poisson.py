@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.sparse import spdiags
 from scipy.sparse.linalg import spsolve
-from scipy.sparse.linalg import inv
 from scipy.sparse.linalg import bicgstab
 import imageio
 
