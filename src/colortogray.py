@@ -30,8 +30,8 @@ def color_to_gray(u, alpha=0.2, itr=3, _k=1., epsilon=0.0001):
     h = df.gX(vx) + df.gY(vy)
     u1 = np.sum(u0, axis=2) / 3  # Initial case
     # u1 = np.sqrt(np.sum(u0**2, axis=2))/_max  # vector ish
-    for i in range(itr):
-        u1 = df.diffuse(u1, alpha, - h*_k)
+
+    u1 = df.pre_diffuse(u1, alpha=0.24, h=(h*_k), itr=3)
     return np.clip(u1, 0, 1)
 
 

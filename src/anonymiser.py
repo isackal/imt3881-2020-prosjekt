@@ -38,7 +38,7 @@ def circularMask(w, h, epsilon=0.05):
     return x**2 + y**2 < 1+epsilon
 
 
-def anonymisering(img):
+def anonymisering(img, itr, alpha):
     """
     Creates a binary mask for where to blur an image
 
@@ -58,7 +58,8 @@ def anonymisering(img):
     # Create a binary mask in the shape of the image
     mask = np.zeros(img.shape[:2]).astype(bool)
     # Converted to grayscale for face detection
-    gray = color_to_gray(img, 100, 0.1)
+    gray = color_to_gray(img, itr=10)
+    gray = (gray * 255).astype(np.uint8)
 
     # Using already trained ML algorithm as basis for face and eye detection
     eye_cascade = cv.CascadeClassifier('data/haarcascade_eye.xml')
@@ -72,6 +73,7 @@ def anonymisering(img):
     # If a face is found, create a blurring mask in that region.
     # Some chance of false positives, but priority on blurring to much
     # More important to ensure everything that needs to be blurred is blurred.
+
     for (x, y, w, h) in faces:
         mask[y:y+int(1.1*h), x:x+w] += circularMask(int(1.1*h), w)
 
@@ -83,7 +85,7 @@ def anonymisering(img):
     # (Less blurring of regions which are not actually faces)
     for (x, y, w, h) in eyes:
         # Create a rectangle around a potential eye
-        top = int(max(0, y-(0.2*w)))
+        top = int(max(0, y-(0.2*h)))
         bottom = int(min(size[0], y+h))
         left = int(max(0, x-(1.2*w)))
         right = int(min(size[1], x+(2.2*w)))
@@ -93,6 +95,7 @@ def anonymisering(img):
 
         # If it found another eye in the region create a mask to anonymize
         if(eyesDetected.shape[0] == 2):
+            
             # Find midpoint between the eyes
             top += int((eyesDetected[0, 0] + eyesDetected[1, 0])*.5)
             left += int((eyesDetected[0, 1] + eyesDetected[1, 1])*.5)
@@ -119,14 +122,9 @@ def anonymisering(img):
         # If no other eye found, prevent region from being blurred at all
         else:
             mask[y, x] = False
-    itr = 50
-    alpha = 0.24
-    img = img.astype(float) / 255
+
     # Return image after a blurring process is run in regions where faces are.
-    #for i in range(3):
-    #    img[:, :, i] = diffusion.pre_diffuse(img[:, :, i], mask, 'e', 'n', alpha, itr, 0, 1.)
-    #img[:, :, 1] = blurring(img[:, :, 1], 2, 25, mask)
-    #img[:, :, 2] = blurring(img[:, :, 2], 2, 25, mask)
+
     return diffusion.pre_diffuse(img, mask, 'e', 'n', alpha, itr, 0, 1.)
 
 
@@ -137,15 +135,16 @@ class Anonymisering(md.Modifier):
         self.name = "Anonymisering"
         self.function = anonymisering
         self.params = [
-            ("img", np.ndarray, None)
+            ("img", np.ndarray, None),
+            ("itr", int, 100),
+            ("alpha", float, 0.24)
         ]
         self.initDefaultValues()
 
 
 #   Testfunksjon. Slett ved endelig release
 if __name__ == "__main__":
-    img = np.array(imageio.imread('../../People.jpg')) # this file does not exist
-    # TODO upload the image to testimages folder :)
-    new_img = anonymisering(img)
+    img = np.array(imageio.imread('../../female.png')).astype(float) / 255
+    new_img = anonymisering(img, 150, 0.24)
     plt.imshow(new_img)
     plt.show()
