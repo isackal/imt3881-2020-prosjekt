@@ -31,9 +31,8 @@ def inpaint(img, itr, mask, alpha):
     if mask is None:  # No inpaint region specified, do no inpainting
         return img
     else:
-        #for i in range(3):
-            #img[:, :, i] = diffusion.pre_diffuse(img[:, :, i], mask, 'e', 'n', alpha, itr, 0, 1.)
-        return diffusion.pre_diffuse(img, mask, 'e', 'n', alpha, itr, 0, 1.)
+        return diffusion.pre_diffuse(img, mask, alpha=alpha, itr=itr)
+
 
 class Inpaint(md.Modifier):
     #   read usage in ../modifiers.py

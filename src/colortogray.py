@@ -49,7 +49,8 @@ class ColorToGray(md.Modifier):
         self.outputFormat = md.FORMAT_BW
         self.initDefaultValues()
 
+
 if __name__ == "__main__":
     img = im.imread("../hdr-bilder/Ocean/Ocean_02048.png").astype(float)/255
     gray = color_to_gray(img)
-    eh.showImageData(gray,"hmmmm")
+    eh.showImageData(gray, "hmmmm")

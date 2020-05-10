@@ -7,7 +7,7 @@ import diffusion
 import imageio
 import matplotlib.pyplot as plt
 
-def blurring(img, n, alpha, mask):
+def blurring(img, itr, alpha, mask):
     """
     Blurs the image
 
@@ -31,12 +31,8 @@ def blurring(img, n, alpha, mask):
     if mask is None:  # Blur whole image if no mask is given
         mask = np.ones(img.shape[:2])
 
-    
-    #for i in range(3):
-    #    img[:, :, i] = diffusion.pre_diffuse(img[:, :, i], mask, 'e', 'n', alpha, n, 0, 1.)
+    return diffusion.pre_diffuse(img, mask, alpha=alpha, itr=itr)
 
-    return diffusion.pre_diffuse(img, mask, 'e', 'n', alpha, n, 0, 1.)
-    #return poisson.implisitt(img, n, mask, alpha)
 
 class Blurring(md.Modifier):
     def __init__(self):
@@ -58,6 +54,7 @@ if __name__ == "__main__":
 
     mask = np.zeros(img.shape[:2])
     mask[50:250, 50:250] = 1
+    mask[50:250, 500:750] = 1
 
     new_img = blurring(img, 50, 0.1, mask)
     plt.imshow(new_img)

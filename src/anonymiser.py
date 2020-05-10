@@ -125,7 +125,7 @@ def anonymisering(img, itr, alpha):
 
     # Return image after a blurring process is run in regions where faces are.
 
-    return diffusion.pre_diffuse(img, mask, 'e', 'n', alpha, itr, 0, 1.)
+    return diffusion.pre_diffuse(img, mask, alpha=alpha, itr=itr)
 
 
 class Anonymisering(md.Modifier):
