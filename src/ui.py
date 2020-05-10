@@ -63,6 +63,8 @@ BIG_IMAGE = None  # pointer to the big screen image
 
 GLOBAL_IMAGES = []  # List of all image groups
 
+WINDOW = None
+
 
 def upDownDelToolbar(
     upFunc,
@@ -175,9 +177,7 @@ class TypeInput(wd.QWidget):
             # not possible to use as source, as it would just be a copy
             # of the original image:
             self.widget.sourceAble = False
-            self.widget.setSize(64, 64)
-            self.setFixedWidth(64)
-            self.setFixedHeight(64)
+            self.widget.setSize(192, 192)
             self.widget.mousePressEvent = self.setImage
         else:
             self.widget = cst.NumericInput(_type)
@@ -363,6 +363,8 @@ class imageFrame(cst.DragableWidget):
         self, parent,
         loadable=True,  # Allow loading images
         zoomable=True,  # Allow zoom
+        bakeable=True,  # Allow making copies of the result
+        deleteable=True,
         toolsEnabled=True  # Allow any tools, such as zoom, load, etc
     ):
         cst.DragableWidget.__init__(self, parent)
@@ -385,6 +387,8 @@ class imageFrame(cst.DragableWidget):
         self.src = None
         self.srcSet = False
         self.loadable = loadable
+        self.bakeable = bakeable
+        self.deleteable = deleteable
         self.toolsEnabled = toolsEnabled
         self.zoomable = zoomable
         self.isSelected = False
@@ -421,8 +425,8 @@ class imageFrame(cst.DragableWidget):
             self.autoFit()
 
     def setSize(self, w, h):
-        self.setFixedHeight(128)
-        self.setFixedWidth(128)
+        self.setFixedHeight(w)
+        self.setFixedWidth(h)
 
     def addToLibrary(self):
         global GLOBAL_IMAGES,  _NUMBERED_IMAGE
@@ -491,34 +495,45 @@ class imageFrame(cst.DragableWidget):
 
         # Tools:
         if self.toolsEnabled:
-            loadBtn = cst.MiniButton(
-                self,
-                "../ui/openProject.png",
-                "Open Image"
-            )
-            loadBtn.mousePressEvent = self.load_dialog
-            fitButton = cst.MiniButton(
-                self,
-                "../ui/autofit.png",
-                "Automatically set the zoom to fit the frame."
-            )
-            fitButton.mousePressEvent = self.autoFit
-            expBtn = cst.MiniButton(self, "../ui/export.png", "Export image")
-            expBtn.mousePressEvent = self.exportImageDialog
-            zinBtn = cst.MiniButton(self, "../ui/zoomInDark.png", "Zoom in")
-            zutBtn = cst.MiniButton(self, "../ui/zoomOutDark.png", "Zoom out")
-            delBtn = cst.MiniButton(self, "../ui/delete.png", "Delete image")
-            delBtn.mousePressEvent = self.deleteDialog
             toolbar = cst.Packlist(self, wd.QHBoxLayout)
             toolbar.setMaximumHeight(16)
-            toolbar.addWidget(loadBtn)
-            toolbar.addWidget(fitButton)
-            toolbar.addWidget(zinBtn)
-            toolbar.addWidget(zutBtn)
+            if self.loadable:
+                loadBtn = cst.MiniButton(
+                    self,
+                    "../ui/openProject.png",
+                    "Open Image"
+                )
+                loadBtn.mousePressEvent = self.load_dialog
+                toolbar.addWidget(loadBtn)
+            if self.zoomable:
+                fitButton = cst.MiniButton(
+                    self,
+                    "../ui/autofit.png",
+                    "Automatically set the zoom to fit the frame."
+                )
+                fitButton.mousePressEvent = self.autoFit
+                toolbar.addWidget(fitButton)
+                zinBtn = cst.MiniButton(self, "../ui/zoomInDark.png", "Zoom in")
+                zutBtn = cst.MiniButton(self, "../ui/zoomOutDark.png", "Zoom out")
+                zinBtn.mousePressEvent = self.zoomIn
+                zutBtn.mousePressEvent = self.zoomOut
+                toolbar.addWidget(zinBtn)
+                toolbar.addWidget(zutBtn)
+            if self.bakeable:
+                bakeButton = cst.MiniButton(
+                    self,
+                    "../ui/bake.png",
+                    "Creates a copy of this images result and places it in resources."
+                )
+                bakeButton.mousePressEvent = self.bakeImage
+                toolbar.addWidget(bakeButton)
+            expBtn = cst.MiniButton(self, "../ui/export.png", "Export image")
+            expBtn.mousePressEvent = self.exportImageDialog
             toolbar.addWidget(expBtn)
-            toolbar.addWidget(delBtn)
-            zinBtn.mousePressEvent = self.zoomIn
-            zutBtn.mousePressEvent = self.zoomOut
+            if self.deleteable:
+                delBtn = cst.MiniButton(self, "../ui/delete.png", "Delete image")
+                delBtn.mousePressEvent = self.deleteDialog
+                toolbar.addWidget(delBtn)
             splitter2.addWidget(toolbar)
 
         splitter1.addWidget(splitter2)
@@ -531,6 +546,13 @@ class imageFrame(cst.DragableWidget):
             self.setMaximumHeight(self.height)
         """
         self.setLayout(self.vlayout)
+
+    def bakeImage(self, event=None):
+        imgData = np.copy(self.picdata)
+        _add = WINDOW.addResource()
+        _add.setData(imgData)
+        _add.pipe()
+        _add.autoFit()
 
     def updateZoom(self):
         self.zoom = self.zoomStrength**(self.z)
@@ -963,7 +985,9 @@ class PipelineWidget(wd.QScrollArea):
 class Window(wd.QDialog):
 
     def __init__(self, parent=None):
+        global WINDOW
         super().__init__()  # inherit from QDialog (aka. window class)
+        WINDOW = self
         self.title = "defualt"
         self.top = 100
         self.left = 100
@@ -1010,6 +1034,7 @@ class Window(wd.QDialog):
         btnAddPic.mousePressEvent = self.addImage
         sp3.addWidget(btnAddPic)
         btnRempvePic = wd.QPushButton("-", self)
+        btnRempvePic.mousePressEvent = self.nani
         btnRempvePic.setMaximumHeight(32)
         sp3.addWidget(btnRempvePic)
         sp0.addWidget(self.sp1)
@@ -1019,7 +1044,14 @@ class Window(wd.QDialog):
         self.setLayout(layout)
 
         # Main Image:
-        self.mainImg = imageFrame(self)
+        self.mainImg = imageFrame(
+            self,
+            loadable=False,
+            zoomable=True,
+            bakeable=True,
+            deleteable=False,
+            toolsEnabled=True
+        )
         BIG_IMAGE = self.mainImg
         self.mainImg.setSizeInterval(256, 256, 2560, 2560)
         self.mainImg.loadable = False
@@ -1060,16 +1092,23 @@ class Window(wd.QDialog):
     def __update__(self):
         self.update()
 
-    def addImage(self, event):
+    def addResource(self):
         global GLOBAL_IMAGES
         _add = imageFrame(self)
-        _add.setSize(128, 128)
+        _add.setSize(192, 192)
         _add.bigImg = self.mainImg
         GLOBAL_IMAGES.append(_add)
         self.imagesSection.addWidget(_add)
         pl = PipelineWidget(self, _add)
         self.pipelineWidgets.addWidget(pl)
         _add.selectThis()
+        return _add
+
+    def nani(self, event):
+        eh.displayWarning("Wow!\nYou just clicked a pointless button.\nGood job!")
+
+    def addImage(self, event):
+        self.addResource()
 
     def selectAndAddModifier(self, event):
         global MODIFIERS
