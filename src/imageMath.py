@@ -2,6 +2,7 @@ import modifiers as md
 import numpy as np
 import formating as frm
 import errorhandling as eh
+import imageio as im
 
 """
 The following modifiers play an essential role in the interactivity in the
@@ -9,6 +10,9 @@ app, and will therefore be included in the final product.
 Eg. the noise module is meant for the user to be able to add
 noise to images to test different smoothing methods.
 """
+
+def read(imgFile):
+    return im.imread(imgFile).astype(np.float16)/255
 
 
 def addNoise(img, seed, minVal, maxVal):

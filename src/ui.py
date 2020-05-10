@@ -63,6 +63,8 @@ BIG_IMAGE = None  # pointer to the big screen image
 
 GLOBAL_IMAGES = []  # List of all image groups
 
+WINDOW = None
+
 
 def upDownDelToolbar(
     upFunc,
@@ -172,9 +174,10 @@ class TypeInput(wd.QWidget):
                 zoomable=False,
                 toolsEnabled=False
             )
-            self.widget.setSize(64, 64)
-            self.setFixedWidth(64)
-            self.setFixedHeight(64)
+            # not possible to use as source, as it would just be a copy
+            # of the original image:
+            self.widget.sourceAble = False
+            self.widget.setSize(192, 192)
             self.widget.mousePressEvent = self.setImage
         else:
             self.widget = cst.NumericInput(_type)
@@ -281,6 +284,14 @@ class ModifierWidget(Collapser):
             first.img.connect(BIG_IMAGE)
             self.widgetPipeline.at = first.img
 
+    def onDelete(self):
+        self.img.disconnectParent()
+        self.img.disconnectChildren()
+        # Delete input connections:
+        for _inp in self.dtas:
+            _inp.onDelete()
+
+
     def deleteThis(self, event=None):
         global BIG_IMAGE
         pimg = self.img.src  # parent-image. Assumed to not be None
@@ -336,10 +347,12 @@ class ModifierWidget(Collapser):
         self.content.addWidget(_add)
         self.img.modifier = self.modifier
 
-    def onUpdateData(self):
+    def onUpdateData(self, pipeTrace=None):
+        if pipeTrace is None:
+            pipeTrace = []
         for i in range(len(self.modifier.values)-1):
             self.modifier.values[i+1] = self.dtas[i].getValue()
-        self.reference.pipe()
+        self.reference.pipe(pipeTrace)
 
     def onUpdateText(self, text):
         self.onUpdateData()
@@ -350,6 +363,8 @@ class imageFrame(cst.DragableWidget):
         self, parent,
         loadable=True,  # Allow loading images
         zoomable=True,  # Allow zoom
+        bakeable=True,  # Allow making copies of the result
+        deleteable=True,
         toolsEnabled=True  # Allow any tools, such as zoom, load, etc
     ):
         cst.DragableWidget.__init__(self, parent)
@@ -372,6 +387,8 @@ class imageFrame(cst.DragableWidget):
         self.src = None
         self.srcSet = False
         self.loadable = loadable
+        self.bakeable = bakeable
+        self.deleteable = deleteable
         self.toolsEnabled = toolsEnabled
         self.zoomable = zoomable
         self.isSelected = False
@@ -390,6 +407,7 @@ class imageFrame(cst.DragableWidget):
         self.inputAble = True  # Can be dragged and used as input
         self.onPipe = cst.noFunction
         self.isDeleted = False
+        self.sourceAble = True  # If true, this image can be selected as input.
 
     def pipeToGroup(self, grp):
         grp.append(self)
@@ -407,8 +425,8 @@ class imageFrame(cst.DragableWidget):
             self.autoFit()
 
     def setSize(self, w, h):
-        self.setFixedHeight(128)
-        self.setFixedWidth(128)
+        self.setFixedHeight(w)
+        self.setFixedWidth(h)
 
     def addToLibrary(self):
         global GLOBAL_IMAGES,  _NUMBERED_IMAGE
@@ -477,34 +495,45 @@ class imageFrame(cst.DragableWidget):
 
         # Tools:
         if self.toolsEnabled:
-            loadBtn = cst.MiniButton(
-                self,
-                "../ui/openProject.png",
-                "Open Image"
-            )
-            loadBtn.mousePressEvent = self.load_dialog
-            fitButton = cst.MiniButton(
-                self,
-                "../ui/autofit.png",
-                "Automatically set the zoom to fit the frame."
-            )
-            fitButton.mousePressEvent = self.autoFit
-            expBtn = cst.MiniButton(self, "../ui/export.png", "Export image")
-            expBtn.mousePressEvent = self.exportImageDialog
-            zinBtn = cst.MiniButton(self, "../ui/zoomInDark.png", "Zoom in")
-            zutBtn = cst.MiniButton(self, "../ui/zoomOutDark.png", "Zoom out")
-            delBtn = cst.MiniButton(self, "../ui/delete.png", "Delete image")
-            delBtn.mousePressEvent = self.deleteDialog
             toolbar = cst.Packlist(self, wd.QHBoxLayout)
             toolbar.setMaximumHeight(16)
-            toolbar.addWidget(loadBtn)
-            toolbar.addWidget(fitButton)
-            toolbar.addWidget(zinBtn)
-            toolbar.addWidget(zutBtn)
+            if self.loadable:
+                loadBtn = cst.MiniButton(
+                    self,
+                    "../ui/openProject.png",
+                    "Open Image"
+                )
+                loadBtn.mousePressEvent = self.load_dialog
+                toolbar.addWidget(loadBtn)
+            if self.zoomable:
+                fitButton = cst.MiniButton(
+                    self,
+                    "../ui/autofit.png",
+                    "Automatically set the zoom to fit the frame."
+                )
+                fitButton.mousePressEvent = self.autoFit
+                toolbar.addWidget(fitButton)
+                zinBtn = cst.MiniButton(self, "../ui/zoomInDark.png", "Zoom in")
+                zutBtn = cst.MiniButton(self, "../ui/zoomOutDark.png", "Zoom out")
+                zinBtn.mousePressEvent = self.zoomIn
+                zutBtn.mousePressEvent = self.zoomOut
+                toolbar.addWidget(zinBtn)
+                toolbar.addWidget(zutBtn)
+            if self.bakeable:
+                bakeButton = cst.MiniButton(
+                    self,
+                    "../ui/bake.png",
+                    "Creates a copy of this images result and places it in resources."
+                )
+                bakeButton.mousePressEvent = self.bakeImage
+                toolbar.addWidget(bakeButton)
+            expBtn = cst.MiniButton(self, "../ui/export.png", "Export image")
+            expBtn.mousePressEvent = self.exportImageDialog
             toolbar.addWidget(expBtn)
-            toolbar.addWidget(delBtn)
-            zinBtn.mousePressEvent = self.zoomIn
-            zutBtn.mousePressEvent = self.zoomOut
+            if self.deleteable:
+                delBtn = cst.MiniButton(self, "../ui/delete.png", "Delete image")
+                delBtn.mousePressEvent = self.deleteDialog
+                toolbar.addWidget(delBtn)
             splitter2.addWidget(toolbar)
 
         splitter1.addWidget(splitter2)
@@ -517,6 +546,13 @@ class imageFrame(cst.DragableWidget):
             self.setMaximumHeight(self.height)
         """
         self.setLayout(self.vlayout)
+
+    def bakeImage(self, event=None):
+        imgData = np.copy(self.picdata)
+        _add = WINDOW.addResource()
+        _add.setData(imgData)
+        _add.pipe()
+        _add.autoFit()
 
     def updateZoom(self):
         self.zoom = self.zoomStrength**(self.z)
@@ -655,25 +691,47 @@ class imageFrame(cst.DragableWidget):
             SELECTED = None
             self.bigImg.disconnectParent()
 
-    def pipeOnce(self):
-        for child in self.pipes:
-            print("Sending data to %s" % child.title)
-            child.setData(self.picdata)
-        if self.onPipe is not None:
-            self.onPipe()
+    def pipeOnce(self, pipeTrace=None):
+        if pipeTrace is None:
+            pipeTrace = []
+        if self not in pipeTrace:
+            pipeTrace.append(self)
+            for child in self.pipes:
+                print("Sending data to %s" % child.title)
+                child.setData(self.picdata)
+            if self.onPipe is not None:
+                self.onPipe(pipeTrace)
+        return pipeTrace
 
-    def pipe(self):
-        if self.isDeleted:
-            print("Why am I still alive?")
-            sys.exit(1)
-        print("\n\nPiping")
-        print(self.zoomable)
-        for child in self.pipes:
-            print("Sending data to %s" % child.title)
-            child.setData(self.picdata)
-            child.pipe()
-        if self.onPipe is not None:
-            self.onPipe()
+    def pipe(self, pipeTrace=None):
+        """
+        Pipe data to connected children.
+        
+        Parameters
+        ----------
+        pipeTrace :     Trace what modifiers has been run through a pipeline.
+                        This is done to make sure no modifier widget can pipe more than once
+                        per pipe "round"
+
+        """
+        if pipeTrace is None:
+            pipeTrace = []
+        if self not in pipeTrace:
+            print("I am not in pipetrace")
+            if self.isDeleted:
+                print("Why am I still alive?")
+                sys.exit(1)
+            print("\n\nPiping")
+            print(self.zoomable)
+            pipeTrace.append(self)
+            for child in self.pipes:
+                print("Sending data to %s" % child.title)
+                child.setData(self.picdata)
+                child.pipe(pipeTrace)
+            if self.onPipe is not None:
+                self.onPipe(pipeTrace)
+        print(pipeTrace)
+        return pipeTrace
 
     def modify(self):
         print(")))")
@@ -917,7 +975,7 @@ class PipelineWidget(wd.QScrollArea):
 
     def onDelete(self):
         for modifier in self.pipes:
-            modifier.deleteThis()
+            modifier.onDelete()
 
     def erase(self):
         self.onDelete()
@@ -927,7 +985,9 @@ class PipelineWidget(wd.QScrollArea):
 class Window(wd.QDialog):
 
     def __init__(self, parent=None):
+        global WINDOW
         super().__init__()  # inherit from QDialog (aka. window class)
+        WINDOW = self
         self.title = "defualt"
         self.top = 100
         self.left = 100
@@ -974,6 +1034,7 @@ class Window(wd.QDialog):
         btnAddPic.mousePressEvent = self.addImage
         sp3.addWidget(btnAddPic)
         btnRempvePic = wd.QPushButton("-", self)
+        btnRempvePic.mousePressEvent = self.nani
         btnRempvePic.setMaximumHeight(32)
         sp3.addWidget(btnRempvePic)
         sp0.addWidget(self.sp1)
@@ -983,7 +1044,14 @@ class Window(wd.QDialog):
         self.setLayout(layout)
 
         # Main Image:
-        self.mainImg = imageFrame(self)
+        self.mainImg = imageFrame(
+            self,
+            loadable=False,
+            zoomable=True,
+            bakeable=True,
+            deleteable=False,
+            toolsEnabled=True
+        )
         BIG_IMAGE = self.mainImg
         self.mainImg.setSizeInterval(256, 256, 2560, 2560)
         self.mainImg.loadable = False
@@ -1024,16 +1092,23 @@ class Window(wd.QDialog):
     def __update__(self):
         self.update()
 
-    def addImage(self, event):
+    def addResource(self):
         global GLOBAL_IMAGES
         _add = imageFrame(self)
-        _add.setSize(128, 128)
+        _add.setSize(192, 192)
         _add.bigImg = self.mainImg
         GLOBAL_IMAGES.append(_add)
         self.imagesSection.addWidget(_add)
         pl = PipelineWidget(self, _add)
         self.pipelineWidgets.addWidget(pl)
         _add.selectThis()
+        return _add
+
+    def nani(self, event):
+        eh.displayWarning("Wow!\nYou just clicked a pointless button.\nGood job!")
+
+    def addImage(self, event):
+        self.addResource()
 
     def selectAndAddModifier(self, event):
         global MODIFIERS
@@ -1074,6 +1149,7 @@ class SelectImageDialog(wd.QDialog):  # $sid
         self.InitWindow()
 
     def mainUI(self):
+        global GLOBAL_IMAGES
         self.imgSelected = False
         images = cst.Packlist(self)
         images.select = None  # Requiered
@@ -1105,11 +1181,12 @@ class SelectImageDialog(wd.QDialog):  # $sid
         rightSide.addWidget(buttons)
         playout.addWidget(rightWidget)
         self.select = None
-        for imgFrm in GLOBAL_IMAGES:
-            imgs = imgFrm.getImageGroup()
-            for img in imgs:
-                _add = ReferenceImage(self, img)
-                images.addWidget(_add)
+        for imgFrm in GLOBAL_IMAGES:  # For each image frame:
+            imgs = imgFrm.getImageGroup()  # Get list of images in its pipeline
+            for img in imgs:  # For each of these images:
+                if img.sourceAble:
+                    _add = ReferenceImage(self, img)
+                    images.addWidget(_add)
 
     def InitWindow(self):
         self.setWindowTitle(self.title)

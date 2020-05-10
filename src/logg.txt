@@ -18,3 +18,7 @@ WARNING:Image deleted
 
 WARNING:Image deleted
 
+WARNING:Wow!
+You just clicked a pointless button.
+Good job!
+

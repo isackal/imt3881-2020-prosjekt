@@ -4,7 +4,7 @@ import PyQt5.QtCore as cr
 from time import time
 
 
-def noFunction():  # This function is a place holder function.
+def noFunction(*args, **qwargs):  # This function is a place holder function.
     pass
 
 
