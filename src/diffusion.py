@@ -85,7 +85,6 @@ def pre_diffuse(u, mask=None, met='e', rand='n', alpha=0.24, itr=50, h=0, D=1):
     mask[-1, :] = False
     mask[:, 0] = False
     mask[:, -1] = False
-    orig_mask = np.copy(mask)
 
     # Creates diffrent views for equation
     t_mask = np.roll(mask, -1, axis=0)
@@ -102,10 +101,9 @@ def pre_diffuse(u, mask=None, met='e', rand='n', alpha=0.24, itr=50, h=0, D=1):
                 4 * new_view[mask]
             )
             new_view = explicit(new_view, mask, laplace, alpha, h, D)
-        
-        if rand == 'd':
-            new_view[~mask] = view[~mask]
-    
+            if rand == 'd':
+                new_view[~mask] = view[~mask]
+
     elif met == 'i':
         shape = view.shape
 
@@ -157,13 +155,10 @@ def pre_diffuse(u, mask=None, met='e', rand='n', alpha=0.24, itr=50, h=0, D=1):
         view = view.reshape(shape)
         mask = mask.reshape(shape[:2])
 
-        
         # Diriclet conditions. Boundry should be returned to
         # original values (asumed known value)
         if rand == 'd':
             new_view[~mask] = view[~mask]
-
- 
 
         u1[top:bottom, left:right] = new_view
 

@@ -56,6 +56,6 @@ if __name__ == "__main__":
     mask[50:250, 50:250] = 1
     mask[50:250, 500:750] = 1
 
-    new_img = blurring(img, 1, 10, mask)
+    new_img = blurring(img, 100, 0.24, mask)
     plt.imshow(new_img)
     plt.show()
