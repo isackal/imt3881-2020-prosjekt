@@ -22,3 +22,7 @@ WARNING:Wow!
 You just clicked a pointless button.
 Good job!
 
+WARNING:Wow!
+You just clicked a pointless button.
+Good job!
+

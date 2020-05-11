@@ -3,6 +3,7 @@ import numpy as np
 import formating as frm
 import errorhandling as eh
 import imageio as im
+import diffusion as df
 
 """
 The following modifiers play an essential role in the interactivity in the
@@ -23,6 +24,9 @@ def addNoise(img, seed, minVal, maxVal):
     img2[:, :, :3] += _rand[:, :, :3]
     return img2
 
+
+def findEdges(img):
+    return np.sqrt(df.gX(img)**2 + df.gY(img)**2)/np.sqrt(2)
 
 def mosaic_get_green(img):
     # eh.showImageData(img, "input mosaic_get_green")
@@ -405,4 +409,15 @@ class Noise(md.Modifier):
             ("max", float, 0.1)
         ]
         self.outputFormat = md.FORMAT_RGBA
+        self.initDefaultValues()
+
+class FindEdges(md.Modifier):
+    def __init__(self):
+        super().__init__()
+        self.name = "Find Edges"
+        self.function = findEdges
+        self.params = [
+            ("source", np.ndarray, None, md.FORMAT_RGB)
+        ]
+        self.outputFormat = md.FORMAT_RGB
         self.initDefaultValues()
