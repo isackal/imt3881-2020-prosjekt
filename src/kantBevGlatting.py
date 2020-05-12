@@ -30,7 +30,7 @@ def KBGDirect(u, _lambda, k=1000):
 def BWKantBevGlatting(u, alpha=0.24, k=0.1, itr=1):
     u1 = u*1  # Copy u so u is not modified:
     D = getD(u1, k)
-    u1 = df.pre_diffuse(u1, met='e', rand='n', alpha=alpha, itr=itr, D=D)
+    u1 = df.pre_diffuse(u1, met='e', alpha=alpha, itr=itr, D=D)
     return u1
 
 

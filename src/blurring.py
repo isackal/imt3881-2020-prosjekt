@@ -29,7 +29,7 @@ def blurring(img, itr, alpha, mask):
     if mask is None:  # Blur whole image if no mask is given
         mask = np.ones(img.shape[:2])
 
-    return diffusion.pre_diffuse(img, mask, alpha=alpha, itr=itr, met='e', rand='d')
+    return diffusion.pre_diffuse(img, mask, alpha=alpha, itr=itr, met='e')
 
 
 class Blurring(md.Modifier):
