@@ -58,7 +58,43 @@ def D_Image(img, k):
 
 
 def pre_diffuse(u, mask=None, met='e', rand='n', alpha=0.24, itr=50, h=0, D=1):
+    """
+    Preps an image for diffusion
 
+    Generates a view of the image around the truth values for the
+    boolean mask this speeds up processing of images if the boolean mask
+    is not true everywhere.
+
+    Parameters
+    ----------
+    u : <numpy.ndarray>
+        image to be processed
+    mask : <numpy.ndarray>
+        boolean mask of where to perform diffusion
+    met : char
+        the schema used to diffuse, (e)xplicit or (i)mplicit
+
+    keep : char
+        whether the image should keep original values where ~mask = true
+
+    alpha : float
+        delta_t / delta_x**2 (default = 0.24)
+
+    itr : int
+        number of times the diffusion should run (default  = 50)
+
+    h : <numpy.ndarray>
+        extra h value that should be added to each pixel in u
+        is not added if h is not a numpy.ndarray (default = 0)
+
+    d : <numpy.ndarray>
+        Scalefactor for edges, used to scale down diffusion around edges if
+        requested. Ignored if not of type numpy.ndarray (default = 0)
+    Returns
+    -------
+    u1 : <numpy.ndarray>
+        diffused image
+    """
     # u1 for returned img, u for returning pixels to origian value if wanted
     u1 = np.copy(u)
 
