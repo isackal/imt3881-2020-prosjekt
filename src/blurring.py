@@ -1,18 +1,16 @@
-import modifiers as md
 import numpy as np
-import poisson
+
+import modifiers as md
 import diffusion
 
-#   Brukt for testfunksjon. Slett ved endelig release
-import imageio
-import matplotlib.pyplot as plt
 
 def blurring(img, itr, alpha, mask):
     """
     Blurs the image
 
     Alpha should remain below 0.24 to prevent numeric
-    instablilty.
+    instablilty. The function is generalized in diffusion.py
+    blurring.py is therefore only a call on to the actual diffusion process.
 
     Paramters
     ---------
@@ -46,16 +44,3 @@ class Blurring(md.Modifier):
             ("mask", np.ndarray, None)
         ]
         self.initDefaultValues()
-
-
-#   Testfunksjon. Slett ved endelig release
-if __name__ == "__main__":
-    img = imageio.imread('../../face.png').astype(float) / 255
-
-    mask = np.zeros(img.shape[:2])
-    mask[50:250, 50:250] = 1
-    mask[50:250, 500:750] = 1
-
-    new_img = blurring(img, 100, 0.24, mask)
-    plt.imshow(new_img)
-    plt.show()

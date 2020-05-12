@@ -2,8 +2,6 @@ import numpy as np
 from scipy.sparse import spdiags
 from scipy.sparse.linalg import spsolve
 
-import matplotlib.pyplot as plt
-
 
 def diffuse(u, alpha=0.24, h=0, D=1., rand='n', dr=0):
     """
@@ -60,7 +58,9 @@ def D_Image(img, k):
 
 
 def pre_diffuse(u, mask=None, met='e', rand='n', alpha=0.24, itr=50, h=0, D=1):
-    u1 = np.copy(u)  # u1 for returned img, u for diriclet conditions
+
+    # u1 for returned img, u for returning pixels to origian value if wanted
+    u1 = np.copy(u)
 
     # apply transformation to whole image if nothing is specified
     if mask is None:
@@ -91,7 +91,7 @@ def pre_diffuse(u, mask=None, met='e', rand='n', alpha=0.24, itr=50, h=0, D=1):
     b_mask = np.roll(mask, 1, axis=0)
     l_mask = np.roll(mask, -1, axis=1)
     r_mask = np.roll(mask, 1, axis=1)
-    if met == 'e':    
+    if met == 'e':
         for i in range(itr):
             laplace = (
                 new_view[t_mask] +
@@ -103,6 +103,9 @@ def pre_diffuse(u, mask=None, met='e', rand='n', alpha=0.24, itr=50, h=0, D=1):
             new_view = explicit(new_view, mask, laplace, alpha, h, D)
             if rand == 'd':
                 new_view[~mask] = view[~mask]
+
+            new_view[new_view > 1] = 1
+            new_view[new_view < 0] = 0
 
     elif met == 'i':
         shape = view.shape
@@ -150,15 +153,12 @@ def pre_diffuse(u, mask=None, met='e', rand='n', alpha=0.24, itr=50, h=0, D=1):
 
         for i in range(itr):
             new_view = implicit(sparse, new_view, shape)
+            if rand == 'd':
+                new_view[~mask] = view[~mask]
 
         new_view = new_view.reshape(shape)
         view = view.reshape(shape)
         mask = mask.reshape(shape[:2])
-
-        # Diriclet conditions. Boundry should be returned to
-        # original values (asumed known value)
-        if rand == 'd':
-            new_view[~mask] = view[~mask]
 
         u1[top:bottom, left:right] = new_view
 
@@ -183,6 +183,7 @@ def explicit(u, mask, laplace=0, alpha=0.24, h=0, D=1):
         return (u - h)
 
     return u
+
 
 # currently only supported on blurring and inpaint.
 def implicit(sparse, u, shape):
