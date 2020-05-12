@@ -57,7 +57,7 @@ def D_Image(img, k):
     return timg
 
 
-def pre_diffuse(u, mask=None, met='e', rand='n', alpha=0.24, itr=50, h=0, D=1):
+def pre_diffuse(u, mask=None, met='e', keep='n', alpha=0.24, itr=50, h=0, D=1):
     """
     Preps an image for diffusion
 
@@ -137,7 +137,7 @@ def pre_diffuse(u, mask=None, met='e', rand='n', alpha=0.24, itr=50, h=0, D=1):
                 4 * new_view[mask]
             )
             new_view = explicit(new_view, mask, laplace, alpha, h, D)
-            if rand == 'd':
+            if keep == 'y':
                 new_view[~mask] = view[~mask]
 
             new_view[new_view > 1] = 1
@@ -189,7 +189,7 @@ def pre_diffuse(u, mask=None, met='e', rand='n', alpha=0.24, itr=50, h=0, D=1):
 
         for i in range(itr):
             new_view = implicit(sparse, new_view, shape)
-            if rand == 'd':
+            if keep == 'y':
                 new_view[~mask] = view[~mask]
 
         new_view = new_view.reshape(shape)
