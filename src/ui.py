@@ -43,6 +43,7 @@ MODIFIERS = [
     imageMath.ColorFilter,
     imageMath.Mosaic,
     imageMath.Noise,
+    imageMath.FindEdges,
     bitcrusher.Bitcrusher,
     contrast.Contrast,
     blurring.Blurring,
