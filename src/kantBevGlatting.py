@@ -66,5 +66,5 @@ if __name__ == "__main__":
     orig_im = im.imread("../testimages/raccoon.png").astype(float) / 255
     tImg = RGBAKantBevGlatting(orig_im, 0.24, 11000, 100)
     tImg2 = KBGDirect(orig_im, 0.1, 0)
-    plt.imshow(tImg2)
+    plt.imshow(tImg)
     plt.show()
