@@ -4,7 +4,7 @@ import modifiers as md
 import diffusion
 
 
-def blurring(img, itr, alpha, mask):
+def blurring(img, itr, mask,  alpha):
     """
     Blurs the image
 

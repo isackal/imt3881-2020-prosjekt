@@ -1,37 +1,81 @@
 import unittest
 import numpy as np
+import imageio
 
-from modules.inpaint import inpaint
-from modules.demosaic import demosaic
+import anonymiser
+import blurring
+#import cloning
+#import colortogray
+#import contrast
+import demosaic
+import inpaint
+#import kantBevGlatting
 
 
 class test_modul(unittest.TestCase):
     def test_inpaint(self):
         # Generer et "Bilde" som ska innpaintes
-        self.img = (np.ones((11, 11)) * 255).astype(np.uint8)
-        self.img[5, 5] = 0
-        self.depth = 500
-        self.mask = np.zeros((11, 11))
-        self.mask[3:7, 3:7] = 1
-        self.img = inpaint(self.img, self.depth, self.mask)
+        self.img = (np.ones((7, 7))).astype(float)
+        self.img[3, 3] = 0
+        self.itr = 1
+        self.mask = np.zeros((7, 7))
+        self.mask[1:6, 1:6] = 1
+        self.alpha = 0.24
 
-        # Sjekk at diffusjon har gått inn til entry som var 0
-        self.assertAlmostEqual(self.img[5, 5], 255)
+        self.img = inpaint.inpaint(self.img, self.itr, self.mask, self.alpha)
+
+        self.assertNotAlmostEqual(self.img[3, 3], 0)
+        self.assertAlmostEqual(self.img[0, 0], 1)
+
+    def test_blurring(self):
+        # Generer et "Bilde" som ska blurres
+        self.img = (np.ones((7, 7))).astype(float)
+        self.img[3, 3] = 0
+        self.itr = 1
+        self.mask = np.zeros((7, 7))
+        self.mask[1:6, 1:6] = 1
+        self.alpha = 0.24
+
+        self.img = blurring.blurring(self.img, self.itr, self.mask, self.alpha)
+
+        self.assertNotAlmostEqual(self.img[3, 3], 0)
+        self.assertAlmostEqual(self.img[0, 0], 1)
 
     def test_demosaic(self):
-        self.red = np.zeros((4, 4))
-        self.blue = np.zeros((4, 4))
-        self.green = np.zeros((4, 4))
-        self.red[::2, ::2] = 255
-        self.blue[1::2, 1::2] = 255
-        self.green[1::2, ::2] = 255
-        self.green[::2, 1::2] = 255
-        self.red = self.red.astype(np.uint8)
-        self.blue = self.blue.astype(np.uint8)
-        self.green = self.green.astype(np.uint8)
+        self.red = np.zeros((7, 7)).astype(float)
+        self.green = np.zeros((7, 7)).astype(float)
+        self.blue = np.zeros((7, 7)).astype(float)
+        self.red[0::2, 0::2] = 1
+        self.green[1::2, 0::2] = 1
+        self.green[0::2, 1::2] = 1
+        self.blue[1::2, 1::2] = 1
+        self.img = demosaic.demosaic(self.red, self.green, self.blue)
 
-        self.img = demosaic(self.red, self.blue, self.green)
-        print(self.img)
-        self.img = self.img.astype(bool)
-        nonDemosaic = np.argwhere(self.img)
-        self.assertTrue(nonDemosaic.all())
+        # Check RGB channel that was previously 0
+        self.assertNotAlmostEqual(self.img[1, 0, 0], 0)
+        self.assertNotAlmostEqual(self.img[0, 0, 1], 0)
+        self.assertNotAlmostEqual(self.img[0, 0, 2], 0)
+
+    def test_anonymisering(self):
+        self.img = (np.ones((20, 20, 3))).astype(float)
+        self.itr = 1
+        self.alpha = 0.24
+
+        try:  # Expected crash as no face present
+            anonymiser.anonymisering(self.img, self.itr, self.alpha)
+            self.assertEqual(1, 0)
+        except ValueError:  # Expected error
+            self.assertEqual(1, 1)
+        except Exception as e:  # Wrong error
+            print(e)
+            self.assertEqual(1, 0)
+
+        self.img = np.asarray(
+                imageio.imread('../testimages/Anon_eye1.png')
+            ).astype(float) / 255
+        try:  # expected to run as there is a face
+            anonymiser.anonymisering(self.img, self.itr, self.alpha)
+            self.assertEqual(1, 1)
+        except Exception as e:  # Did not create a boolean mask anywhere
+            print(e)
+            self.assertEqual(1, 0)

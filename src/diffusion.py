@@ -227,13 +227,13 @@ def explicit(u, mask, laplace=0, alpha=0.24, h=0, D=1):
         u[mask] += laplace * alpha * D[mask]
     else:
         u[mask] += laplace * alpha
-
+    
     # Neumann boundary condition du/dt = 0
     u[0, :] = u[1, :]
     u[:, 0] = u[:, 1]
     u[-1, :] = u[-2, :]
     u[:, -1] = u[:, -2]
-
+    
     # only apply h if relevant, else rounding error occurs
     if isinstance(h, np.ndarray):
         return (u - h)
