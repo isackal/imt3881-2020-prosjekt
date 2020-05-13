@@ -2,8 +2,6 @@ import numpy as np
 from scipy.sparse import spdiags
 from scipy.sparse.linalg import spsolve
 
-import matplotlib.pyplot as plt
-
 
 def diffuse(u, alpha=0.24, h=0, D=1., rand='n', dr=0):
     """
@@ -59,8 +57,43 @@ def D_Image(img, k):
     return timg
 
 
-def pre_diffuse(u, mask=None, met='e', rand='n', alpha=0.24, itr=50, h=0, D=1):
-    u1 = np.copy(u)  # u1 for returned img, u for diriclet conditions
+def pre_diffuse(u, mask=None, met='e', alpha=0.24, itr=50, h=0, D=1):
+    """
+    Preps an image for diffusion
+
+    Generates a view of the image around the truth values for the
+    boolean mask this speeds up processing of images if the boolean mask
+    is not true everywhere.
+
+    Parameters
+    ----------
+    u : <numpy.ndarray>
+        image to be processed
+    mask : <numpy.ndarray>
+        boolean mask of where to perform diffusion
+    met : char
+        the schema used to diffuse, (e)xplicit or (i)mplicit
+
+    alpha : float
+        delta_t / delta_x**2 (default = 0.24)
+
+    itr : int
+        number of times the diffusion should run (default  = 50)
+
+    h : <numpy.ndarray>
+        extra h value that should be added to each pixel in u
+        is not added if h is not a numpy.ndarray (default = 0)
+
+    d : <numpy.ndarray>
+        Scalefactor for edges, used to scale down diffusion around edges if
+        requested. Ignored if not of type numpy.ndarray (default = 0)
+    Returns
+    -------
+    u1 : <numpy.ndarray>
+        diffused image
+    """
+    # u1 for returned img, u for returning pixels to origian value if wanted
+    u1 = np.copy(u)
 
     # apply transformation to whole image if nothing is specified
     if mask is None:
@@ -91,7 +124,7 @@ def pre_diffuse(u, mask=None, met='e', rand='n', alpha=0.24, itr=50, h=0, D=1):
     b_mask = np.roll(mask, 1, axis=0)
     l_mask = np.roll(mask, -1, axis=1)
     r_mask = np.roll(mask, 1, axis=1)
-    if met == 'e':    
+    if met == 'e':
         for i in range(itr):
             laplace = (
                 new_view[t_mask] +
@@ -101,8 +134,9 @@ def pre_diffuse(u, mask=None, met='e', rand='n', alpha=0.24, itr=50, h=0, D=1):
                 4 * new_view[mask]
             )
             new_view = explicit(new_view, mask, laplace, alpha, h, D)
-            if rand == 'd':
-                new_view[~mask] = view[~mask]
+
+            new_view[new_view > 1] = 1
+            new_view[new_view < 0] = 0
 
     elif met == 'i':
         shape = view.shape
@@ -155,11 +189,6 @@ def pre_diffuse(u, mask=None, met='e', rand='n', alpha=0.24, itr=50, h=0, D=1):
         view = view.reshape(shape)
         mask = mask.reshape(shape[:2])
 
-        # Diriclet conditions. Boundry should be returned to
-        # original values (asumed known value)
-        if rand == 'd':
-            new_view[~mask] = view[~mask]
-
         u1[top:bottom, left:right] = new_view
 
     return u1
@@ -183,6 +212,7 @@ def explicit(u, mask, laplace=0, alpha=0.24, h=0, D=1):
         return (u - h)
 
     return u
+
 
 # currently only supported on blurring and inpaint.
 def implicit(sparse, u, shape):

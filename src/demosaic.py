@@ -1,11 +1,7 @@
 import numpy as np
+
 import modifiers as md
-
 from inpaint import inpaint
-
-#   Brukt for testfunksjon. Slett ved endelig release
-import imageio
-import matplotlib.pyplot as plt
 
 
 def demosaic(red, green, blue):
@@ -17,13 +13,11 @@ def demosaic(red, green, blue):
     new_red = inpaint(red, 10, redMask, 0.24)
     new_green = inpaint(green, 10, greenMask, 0.24)
     new_blue = inpaint(blue, 10, blueMask, 0.24)
-    
 
-    
     img[:, :, 0] = new_red
     img[:, :, 1] = new_green
     img[:, :, 2] = new_blue
-    
+
     return img
 
 
@@ -39,21 +33,3 @@ class Demosaic(md.Modifier):
             ("blue", np.ndarray, None)
         ]
         self.initDefaultValues()
-
-
-#   Testfunksjon. Slett ved endelig release
-if __name__ == "__main__":
-    img = imageio.imread('../testimages/mosaic_raccoon.png').astype(float) / 255
-
-    """
-    red = np.zeros(img.shape[:2])
-    blue = np.zeros(img.shape[:2])
-    green = np.zeros(img.shape[:2])
-    red[::2, ::2] = img[::2, ::2, 0]
-    green[1::2, ::2] = img[1::2, ::2, 1]
-    green[::2, 1::2] = img[::2, 1::2, 1]
-    blue[1::2, 1::2] = img[1::2, 1::2, 2]
-    """
-    new_img = demosaic(img[:, :, 0], img[:, :, 1], img[:, :, 2])
-    plt.imshow(new_img)
-    plt.show()

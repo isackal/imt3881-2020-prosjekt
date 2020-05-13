@@ -1,15 +1,9 @@
 import numpy as np
-import modifiers as md
 import cv2 as cv
 
-from blurring import blurring
+import modifiers as md
 from colortogray import color_to_gray
-from grayscale import colorToGray
 import diffusion
-
-#   Brukt for testfunksjon. Slett ved endelig release
-import imageio
-import matplotlib.pyplot as plt
 
 
 def circularMask(w, h, epsilon=0.05):
@@ -95,7 +89,7 @@ def anonymisering(img, itr, alpha):
 
         # If it found another eye in the region create a mask to anonymize
         if(eyesDetected.shape[0] == 2):
-            
+
             # Find midpoint between the eyes
             top += int((eyesDetected[0, 0] + eyesDetected[1, 0])*.5)
             left += int((eyesDetected[0, 1] + eyesDetected[1, 1])*.5)
@@ -140,11 +134,3 @@ class Anonymisering(md.Modifier):
             ("alpha", float, 0.24)
         ]
         self.initDefaultValues()
-
-
-#   Testfunksjon. Slett ved endelig release
-if __name__ == "__main__":
-    img = np.array(imageio.imread('../../female.png')).astype(float) / 255
-    new_img = anonymisering(img, 150, 0.24)
-    plt.imshow(new_img)
-    plt.show()
