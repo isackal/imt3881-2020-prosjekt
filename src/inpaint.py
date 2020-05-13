@@ -4,7 +4,7 @@ import modifiers as md
 import diffusion
 
 
-def inpaint(img, itr, mask, alpha):
+def inpaint(img, itr=10, mask=None, alpha=0.24):
     """
     Blurs the image
 
@@ -16,9 +16,11 @@ def inpaint(img, itr, mask, alpha):
     img : np.ndarray
         Source image
     depth : int
-        Number of iterations (default = 50)
+        Number of iterations (default = 10)
     mask : np.ndarray
         Region of image that should be inpainted
+    alpha : float
+        delta_t / delta_x**2 (default = 0.24)
     Returns
     -------
     np.ndarray

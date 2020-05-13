@@ -2,14 +2,16 @@ import unittest
 import numpy as np
 import imageio
 
+import matplotlib.pyplot as plt
+
 import anonymiser
 import blurring
-#import cloning
-#import colortogray
-#import contrast
+import cloning
+import colortogray
+import contrast
 import demosaic
 import inpaint
-#import kantBevGlatting
+import kantBevGlatting
 
 
 class test_modul(unittest.TestCase):
@@ -77,5 +79,75 @@ class test_modul(unittest.TestCase):
             anonymiser.anonymisering(self.img, self.itr, self.alpha)
             self.assertEqual(1, 1)
         except Exception as e:  # Did not create a boolean mask anywhere
+            print(e)
+            self.assertEqual(1, 0)
+
+    def test_colorToGray(self):
+        self.img = np.ones((7, 7, 3)).astype(float)
+
+        self.img = colortogray.color_to_gray(self.img)
+
+        # Test if multiple channels are deleted
+        self.assertEqual(len(self.img.shape), 2)
+
+    def test_kantBevGlatting(self):
+        self.img = np.zeros((11, 11, 3)).astype(float)
+
+        self.img[4:7, :] = 1
+        self.img[5, :] = 0.5
+        self.img[3, :] = 0.5
+        self.img[7, :] = 0.5
+        self.alpha = 0.24
+        self.k = 100000
+        self.itr = 5
+
+        self.blurImg = np.copy(self.img)
+        self.blurImg = blurring.blurring(
+            self.blurImg, self.itr, None, self.alpha
+        )
+
+        self.img = kantBevGlatting.RGBAKantBevGlatting(
+            self.img, self.alpha, self.k, self.itr
+        )
+
+        self.sum = np.sum(self.img - self.blurImg)
+        self.assertNotAlmostEqual(self.sum, 0)
+
+    def test_kontrast(self):
+        self.img = np.zeros((11, 11, 3)).astype(float)
+
+        self.img[4:7, :] = 1
+        self.img[5, :] = 0.5
+        self.img[3, :] = 0.5
+        self.img[7, :] = 0.5
+
+        self.orig_img = np.copy(self.img)
+        self.img = contrast.contrast(self.img)
+
+        self.sum = np.sum(self.img - self.orig_img)
+        self.assertNotAlmostEqual(self.sum, 0)
+
+    def test_cloning(self):
+        self.img1 = np.zeros((11, 11, 3)).astype(float)
+        self.img2 = np.zeros((11, 11, 3)).astype(float)
+        self.img2[2:4, 2:4] = 1
+        self.mask1 = np.copy(self.img2).astype(bool)
+        self.itr = 5
+        self.alpha = 0.24
+
+        self.img = cloning.cloning(
+            self.img1, self.img2, self.itr, self.mask1, None, self.alpha
+        )
+
+        self.sum = np.sum(self.img)
+        self.assertNotAlmostEqual(self.sum, 0)
+
+        # Just to run the extra line in else statement, no real test
+        try:
+            self.img = cloning.cloning(
+                self.img1, self.img2, self.itr,
+                self.mask1, self.mask1, self.alpha
+            )
+        except Exception as e:
             print(e)
             self.assertEqual(1, 0)
