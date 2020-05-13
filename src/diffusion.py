@@ -195,7 +195,34 @@ def pre_diffuse(u, mask=None, met='e', alpha=0.24, itr=50, h=0, D=1):
 
 
 def explicit(u, mask, laplace=0, alpha=0.24, h=0, D=1):
+    """
+    runs one iteration trough an explicit schema
 
+    Alpha should remain below 0.24 to prevent numeric
+    instablilty.
+
+    Paramters
+    ---------
+    u : np.ndarray
+        View of source image
+    mask : numpy.ndarray
+        boolean mask where values should and should not be added
+    laplace : numpy.ndarray
+        laplace transformation to be applied to view
+    alpha : float
+        delta_t / delta_x**2 (default = 0.24)
+    h : int / numpy.ndarray
+        array of diffrent h values to subtract from view
+        ignored if not numpy.ndarray
+    D : int / numpy.ndarray
+        array of scale factors to apply to laplace transformation
+        ignored if not numpy.ndarray
+
+    Returns
+    -------
+    np.ndarray
+        image with one laplace transformation
+    """
     if isinstance(D, np.ndarray):
         u[mask] += laplace * alpha * D[mask]
     else:
@@ -216,6 +243,26 @@ def explicit(u, mask, laplace=0, alpha=0.24, h=0, D=1):
 
 # currently only supported on blurring and inpaint.
 def implicit(sparse, u, shape):
+    """
+    Solves poisson schema implicitly
+
+    Uses sparse matricies to solve Ax = b. Currently not in use
+    as boundry condition is not properly handled
+
+    Paramters
+    ---------
+    sparse : sparse matrix
+        Sparse matrix for A
+    u : numpy.ndarray
+        Vectorized version of image, used as b
+    shape : numpy.ndarray
+        shape of original image, used for skipping to next row/col of image
+
+    Returns
+    -------
+    np.ndarray
+        image with one laplace transformation
+    """
     u = spsolve(sparse, u)
     u[0::shape[1]] = u[1::shape[1]]
     u[shape[1]-1::shape[1]] = u[shape[1]-2::shape[1]]
