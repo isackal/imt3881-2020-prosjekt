@@ -1,6 +1,9 @@
-python .\blurring.py
-python .\inpaint.py
-python .\anonymiser.py
-python .\demosaic.py
-python .\colortogray.py
-python .\kantBevGlatting.py
+IF EXIST "htmlcov" (
+    rmdir /s /q htmlcov
+)
+IF EXIST ".coverage" (
+    del .coverage
+)
+
+coverage run --source=. -m unittest test.py
+coverage html

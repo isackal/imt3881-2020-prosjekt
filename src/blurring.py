@@ -4,7 +4,7 @@ import modifiers as md
 import diffusion
 
 
-def blurring(img, itr, alpha, mask):
+def blurring(img, itr, mask,  alpha):
     """
     Blurs the image
 
@@ -14,7 +14,7 @@ def blurring(img, itr, alpha, mask):
 
     Paramters
     ---------
-    img : np.ndarray
+    img : numpy.ndarray
         Source image
     n : int
         Number of iterations (default = 10)
@@ -23,7 +23,7 @@ def blurring(img, itr, alpha, mask):
 
     Returns
     -------
-    np.ndarray
+    numpy.ndarray
         Blurred image
     """
     if mask is None:  # Blur whole image if no mask is given

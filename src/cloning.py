@@ -92,7 +92,7 @@ class Cloning(md.Modifier):
             ("img2", np.ndarray, None),
             ("iterations", int, 100),
             ("mask1", np.ndarray, None),
-            ("mask2", np.ndarray, None)
+            ("mask2", np.ndarray, None),
             ("alpha", float, 0.24)
         ]
         self.initDefaultValues()
