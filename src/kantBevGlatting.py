@@ -3,6 +3,7 @@ import numpy as np
 import modifiers as md
 import errorhandling as eh
 import linalgSolvers as lgs
+import matplotlib.pyplot as plt
 
 
 def getD(u, k):
@@ -59,12 +60,23 @@ class KantbevarendeGlatting(md.Modifier):
         self.outputFormat = md.FORMAT_RGBA  # RGBA formatted output
         self.initDefaultValues()
 
-
-if __name__ == "__main__":
+def testKBG():
     import imageio as im
-    import matplotlib.pyplot as plt
+    # import matplotlib.pyplot as plt
     orig_im = im.imread("../testimages/raccoon.png").astype(float) / 255
     tImg = RGBAKantBevGlatting(orig_im, 0.24, 11000, 100)
     tImg2 = KBGDirect(orig_im, 0.1, 0)
     plt.imshow(tImg)
     plt.show()
+
+
+def threadTest():
+    import imageio as im
+    # import matplotlib.pyplot as plt
+    orig_im = im.imread("../hdr-bilder/Ocean/Ocean_00512.png").astype(float) / 255
+    tImg2 = KBGDirect(orig_im, 0.1, 0)
+    return tImg2
+
+
+if __name__ == "__main__":
+    testKBG()

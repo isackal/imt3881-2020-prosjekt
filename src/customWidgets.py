@@ -2,6 +2,8 @@ from PyQt5 import QtGui
 import PyQt5.QtWidgets as wd
 import PyQt5.QtCore as cr
 from time import time
+from threading import Thread, Lock
+import sys
 
 
 def noFunction(*args, **qwargs):  # This function is a place holder function.
@@ -287,6 +289,46 @@ class OptionsDialog(wd.QDialog):  # $sid
         else:
             self.accept()
             print(self.selectedIndex.get())
+
+class Progression(wd.QDialog):
+
+    def __init__(self, _max=1, txt="Progress"):
+        super().__init__()
+        self.p = 0 # Progression
+        self.pMax = _max
+        self.finished = 0
+        self.lock = Lock()
+        self.txt = txt
+        self.process = None
+        self.retValue = None
+        self.notClosed = True
+        self.initUI()
+        self.timer = cr.QTimer(self)
+        self.timer.timeout.connect(self._update)
+        self.fps = 4
+        self.timer.start(1000/self.fps)
+
+    def progressionRead(self):
+        self.lock.acquire()
+        self.finished = self.p/self.pMax
+        self.lock.release()
+    
+    def initUI(self):
+        vlayout = wd.QVBoxLayout()
+        self.setLayout(vlayout)
+        self.pbar = wd.QProgressBar()
+        self.pbar.setMaximum(100)
+        lbl = wd.QLabel(self.txt)
+        vlayout.addWidget(lbl)
+        vlayout.addWidget(self.pbar)
+        self.setGeometry(0, 0, 320, 240)
+
+    def _update(self):
+        self.progressionRead()
+        self.pbar.text = "%.8f / 100" % self.finished
+        self.pbar.setValue(self.finished*100)
+        if (self.finished > 0.999):
+            self.accept()
 
 
 FloatValidator = QtGui.QRegExpValidator(cr.QRegExp(r"[-]?\d+[.]?\d*"))

@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import imageio as im
 from math import log
+import hdr
 
 # Import GUI:
 import PyQt5.QtWidgets as wd
@@ -102,6 +103,17 @@ def upDownDelToolbar(
     toolbar.addWidget(_del)
 
     return toolbar
+
+def loadHDRDialog():
+    fd = wd.QFileDialog()
+    fd.setFileMode(wd.QFileDialog.Directory)
+    if fd.exec_() and hdr.validateSelection(fd.selectedFiles()[0]):
+        print(fd.selectedFiles()[0])
+        images, times = hdr.loadImages(fd.selectedFiles()[0])
+        _img = hdr.hdr(images, times, 100)
+        return _img
+    else:
+        return None
 
 
 class Collapser(wd.QWidget):
@@ -440,13 +452,16 @@ class imageFrame(cst.DragableWidget):
     def load_image(self, fil):
         if self.loadable:
             o_image = im.imread(fil)
+            """
             _image = np.ones((o_image.shape[0], o_image.shape[1], 4)) * 255
             _image[:, :, 0] = o_image[:, :, 0]  # RED
             _image[:, :, 1] = o_image[:, :, 1]  # GREEN
             _image[:, :, 2] = o_image[:, :, 2]  # BLUE
             if o_image.shape[2] == 4:
                 _image[:, :, 3] = o_image[:, :, 3]  # BLUE
-            self.setData(_image.astype(np.uint8))
+            """
+            # self.setData(_image.astype(np.uint8))
+            self.setData(imageMath.rgbaFormat(o_image))
 
     def exportImageDialog(self, event):
         fil, _ = wd.QFileDialog.getSaveFileName(
@@ -1034,7 +1049,7 @@ class Window(wd.QDialog):
         btnAddPic.setMaximumHeight(32)
         btnAddPic.mousePressEvent = self.addImage
         sp3.addWidget(btnAddPic)
-        btnRempvePic = wd.QPushButton("-", self)
+        btnRempvePic = wd.QPushButton("HDR", self)
         btnRempvePic.mousePressEvent = self.nani
         btnRempvePic.setMaximumHeight(32)
         sp3.addWidget(btnRempvePic)
@@ -1093,7 +1108,7 @@ class Window(wd.QDialog):
     def __update__(self):
         self.update()
 
-    def addResource(self):
+    def addResource(self, imgData=None):
         global GLOBAL_IMAGES
         _add = imageFrame(self)
         _add.setSize(192, 192)
@@ -1103,10 +1118,17 @@ class Window(wd.QDialog):
         pl = PipelineWidget(self, _add)
         self.pipelineWidgets.addWidget(pl)
         _add.selectThis()
+        if imgData is not None:
+            _add.setData(imgData)
+            _add.pipe()
         return _add
 
     def nani(self, event):
-        eh.displayWarning("Wow!\nYou just clicked a pointless button.\nGood job!")
+        _img = loadHDRDialog()
+        import matplotlib.pyplot as plt
+        if _img is not None:
+            print(_img.shape)
+            self.addResource(imageMath.rgbaFormat(_img))
 
     def addImage(self, event):
         self.addResource()

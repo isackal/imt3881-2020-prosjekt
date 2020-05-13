@@ -12,6 +12,17 @@ Eg. the noise module is meant for the user to be able to add
 noise to images to test different smoothing methods.
 """
 
+
+def rgbaFormat(o_image):
+    if o_image.shape[2] == 4:
+        return o_image.astype(np.uint8)
+    else:
+        _image = np.ones((o_image.shape[0], o_image.shape[1], 4)) * 255
+        for i in range(3):
+            _image[:, :, i] = o_image[:, :, i]  # RED
+        return _image.astype(np.uint8)
+
+
 def read(imgFile):
     return im.imread(imgFile).astype(np.float16)/255
 

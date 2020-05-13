@@ -209,37 +209,47 @@ def reconstructRadiance(images, response_curve, log_exposure_times, prgs=None):
     num_images = len(images)
     iterations = 0
     if prgs is not None:
-        iterations = num_images
+        iterations = img_shape[0]*img_shape[1]
         prgs.lock.acquire()
         prgs.pMax = iterations
         prgs.p = 0
         prgs.lock.release()
-    rc = np.array(response_curve).astype(np.int32)  # To ensure responsecurve is ndarray
-    g = np.zeros((images[0].shape[0], images[0].shape[1], num_images), np.float64)
+    for i in range(img_shape[0]):
+        for j in range(img_shape[1]):
+            g = np.array([response_curve[images[k][i, j]]
+                          for k in range(num_images)])
+            w_val = np.array([w(images[k][i, j]) for k in range(num_images)])
+            SumW = np.sum(w_val)
+            if SumW > 0:
+                hdr_img[i, j] = np.sum(w_val * (g - log_exposure_times) / SumW)
+            else:
+                hdr_img[i, j] = (g[num_images // 2] -
+                                 log_exposure_times[num_images // 2])
+            if prgs is not None:
+                prgs.lock.acquire()
+                prgs.p += 1
+                prgs.lock.release()
+    rc = np.array(response_curve)  # To ensure responsecurve is ndarray
+    g = np.zeros((images[0].shape[0], images[0].shape[1], num_images))
     w_val = np.copy(g)
+    _hdr = np.copy(g)
     _1 = g + 1
     let = g + 1  # Log exposure times
     for _pic in range(num_images):
-        print(_pic)
-        g[:, :, _pic] = np.take(rc, images[_pic].astype(np.int32))
+        g[:, :, _pic] = np.take(images[_pic], rc)
         w_val[:, :, _pic] = _w(images[_pic])
         let[:, :, _pic] *= log_exposure_times[_pic]
-        if prgs is not None:
-            prgs.lock.acquire()
-            prgs.p += 1
-            prgs.lock.release()
     SumW = np.sum(w_val, axis=2)
     _tru = (SumW > 0)
     _fls = (_tru == False)
-    hdr_img[_tru] = (np.sum(w_val * (g - let), axis=2)/SumW)[_tru]
-    hdr_img[_fls] = g[:, :, num_images//2][_fls] - let[:, :, num_images//2][_fls]
+    _hdr[_tru] = np.sum(w_val * (g - let), axis=2)/SumW
+    _hdr[_fls] = g[:, :, num_images//2][_fls] - let[:, :, num_images//2][_fls]
 
     ret = normalize(hdr_img)
     if prgs is not None:
         prgs.lock.acquire()
         prgs.retValue = ret
         prgs.lock.release()
-
     return ret
 
 
@@ -288,7 +298,6 @@ def hdr(images, log_exposure, l):
     hdr_img : <numpy.ndarray>
         Reconstructed hdr image
     """
-    print(images[0].shape)
     num_channels = images[0].shape[2]
     hdr_img = np.zeros((images[0].shape[0],
                         images[0].shape[1],
