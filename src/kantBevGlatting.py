@@ -1,31 +1,12 @@
 import diffusion as df
 import numpy as np
 import modifiers as md
-import errorhandling as eh
-import linalgSolvers as lgs
 import matplotlib.pyplot as plt
 
 
 def getD(u, k):
     D = 1. / (1 + k * (df.gX(u)**2 + df.gY(u)**2))
     return D
-
-
-def BWKBGDirect(u, _lambda, k=1000):
-    _d = np.ravel(getD(u, k))
-    _s = 8 * _d + _lambda
-    _n = -_d * 2
-    return lgs.solveAsn(
-        _s,
-        _n,
-        _lambda*u
-    )
-
-def KBGDirect(u, _lambda, k=1000):
-    _img = np.copy(u)
-    for i in range(3):
-        _img[:, :, i] = BWKBGDirect(_img[:, :, i], _lambda, k)
-    return _img
 
 
 def BWKantBevGlatting(u, alpha=0.24, k=0.1, itr=1):
@@ -60,22 +41,14 @@ class KantbevarendeGlatting(md.Modifier):
         self.outputFormat = md.FORMAT_RGBA  # RGBA formatted output
         self.initDefaultValues()
 
+
 def testKBG():
     import imageio as im
     # import matplotlib.pyplot as plt
     orig_im = im.imread("../testimages/raccoon.png").astype(float) / 255
     tImg = RGBAKantBevGlatting(orig_im, 0.24, 11000, 100)
-    tImg2 = KBGDirect(orig_im, 0.1, 0)
     plt.imshow(tImg)
     plt.show()
-
-
-def threadTest():
-    import imageio as im
-    # import matplotlib.pyplot as plt
-    orig_im = im.imread("../hdr-bilder/Ocean/Ocean_00512.png").astype(float) / 255
-    tImg2 = KBGDirect(orig_im, 0.1, 0)
-    return tImg2
 
 
 if __name__ == "__main__":

@@ -10,7 +10,6 @@ import PyQt5.QtWidgets as wd
 import PyQt5.QtCore as cr
 from PyQt5 import QtGui
 import customWidgets as cst
-import errorhandling as eh  # used to display error and warnings
 
 # Import Image interactivity modifiers:
 import imageMath
@@ -50,6 +49,7 @@ MODIFIERS = [
     blurring.Blurring,
     meanimage.Meanimage,
     kbg.KantbevarendeGlatting,
+    kbg.KantDModul,
     ctg.ColorToGray,
     demosaic.Demosaic,
     inpaint.Inpaint,
@@ -106,6 +106,7 @@ def upDownDelToolbar(
 
     return toolbar
 
+
 def loadHDRDialog():
     """
     Loads a HDR image through a Qt Dialog
@@ -118,7 +119,6 @@ def loadHDRDialog():
     fd = wd.QFileDialog()
     fd.setFileMode(wd.QFileDialog.Directory)
     if fd.exec_() and hdr.validateSelection(fd.selectedFiles()[0]):
-        print(fd.selectedFiles()[0])
         images, times = hdr.loadImages(fd.selectedFiles()[0])
         _img = hdr.hdr(images, times, 100)
         return _img
@@ -327,7 +327,7 @@ class ModifierWidget(Collapser):
             # Return the last neighbour that used to be over
             # itself in the hirarchy:
             neighbour = self.masterLayout.moveUp(self)
-            if neighbour is not None: # If there was a neighbour
+            if neighbour is not None:  # If there was a neighbour
                 self.swapPlaces(neighbour, self)  # Switch places
                 self.reference.pipe()  # Update pipeline
 
@@ -387,7 +387,6 @@ class ModifierWidget(Collapser):
         for _inp in self.dtas:
             _inp.onDelete()
 
-
     def deleteThis(self, event=None):
         """
         Deletes this object. Can be used with an event.
@@ -417,16 +416,16 @@ class ModifierWidget(Collapser):
                 # last element:
                 BIG_IMAGE.disconnectParent()
                 pimg.connect(BIG_IMAGE)
-            self.masterLayout.removeWidget(self) # remove self from its layout
-        pimg.pipe() # Update pipeline
-        self.deleteLater() # Delete this instance
+            self.masterLayout.removeWidget(self)  # remove self from its layout
+        pimg.pipe()  # Update pipeline
+        self.deleteLater()  # Delete this instance
 
     def mainUI(self):
         """
         Main UI of the Modifier Widget. This overrides its parent class
         mainUI and will be created as the parent class __init__ is called.
         """
-        self.img = imageFrame( # image containing transformed data
+        self.img = imageFrame(  # image containing transformed data
             self,
             loadable=False,
             zoomable=False,
@@ -466,9 +465,10 @@ class ModifierWidget(Collapser):
         Parameters
         ----------
 
-        pipeTrace   :   <list>  list of pointers images all ready involved in the
-                                same "pipe round". Used to prevent infinite
-                                recursion.
+        pipeTrace   :   <list>
+                        list of pointers images all ready involved in the
+                        same "pipe round". Used to prevent infinite
+                        recursion.
         """
         if pipeTrace is None:
             # aka. new "pipe round:"
@@ -540,7 +540,7 @@ class imageFrame(cst.DragableWidget):
         self.widgetPipeline = None  # pointer to its pipeline widget
         self.showEvent = self.show  # called when the image is being un-hid
         self.mainUI()  # Sets up main UI
-        self.init_image() # initializes its image widget and data.
+        self.init_image()  # initializes its image widget and data.
         self.group = [self]  # group of this and connected images (unused)
         self.inputAble = True  # Can be dragged and used as input (unfinished)
         self.onPipe = cst.noFunction  # function to be called when it is piping
@@ -694,8 +694,12 @@ class imageFrame(cst.DragableWidget):
                 )
                 fitButton.mousePressEvent = self.autoFit
                 toolbar.addWidget(fitButton)
-                zinBtn = cst.MiniButton(self, "../ui/zoomInDark.png", "Zoom in")
-                zutBtn = cst.MiniButton(self, "../ui/zoomOutDark.png", "Zoom out")
+                zinBtn = cst.MiniButton(
+                    self, "../ui/zoomInDark.png", "Zoom in"
+                )
+                zutBtn = cst.MiniButton(
+                    self, "../ui/zoomOutDark.png", "Zoom out"
+                )
                 zinBtn.mousePressEvent = self.zoomIn
                 zutBtn.mousePressEvent = self.zoomOut
                 toolbar.addWidget(zinBtn)
@@ -704,7 +708,7 @@ class imageFrame(cst.DragableWidget):
                 bakeButton = cst.MiniButton(
                     self,
                     "../ui/bake.png",
-                    "Creates a copy of this images result and places it in resources."
+                    "Bakes image into new image."
                 )
                 bakeButton.mousePressEvent = self.bakeImage
                 toolbar.addWidget(bakeButton)
@@ -712,7 +716,9 @@ class imageFrame(cst.DragableWidget):
             expBtn.mousePressEvent = self.exportImageDialog
             toolbar.addWidget(expBtn)
             if self.deleteable:
-                delBtn = cst.MiniButton(self, "../ui/delete.png", "Delete image")
+                delBtn = cst.MiniButton(
+                    self, "../ui/delete.png", "Delete image"
+                )
                 delBtn.mousePressEvent = self.deleteDialog
                 toolbar.addWidget(delBtn)
             splitter2.addWidget(toolbar)
@@ -834,7 +840,6 @@ class imageFrame(cst.DragableWidget):
         Sets "child"s input source to be this image
         """
         if (child is not None) and (child.src is None):
-            print(child.src)
             child.src = self
             self.pipes.append(child)
 
@@ -849,7 +854,6 @@ class imageFrame(cst.DragableWidget):
         """
         for child in children:
             if child.src is None:
-                print(child.src)
                 child.src = self
                 self.pipes.append(child)
 
@@ -859,7 +863,6 @@ class imageFrame(cst.DragableWidget):
         """
         dt = event.angleDelta()
         delta = int(round(dt.y()/self.zoomSensitivity))
-        print(delta)
         if delta != 0:
             self.z += delta
             if self.z < self.zoomRange[0]:
@@ -901,7 +904,6 @@ class imageFrame(cst.DragableWidget):
             (self != self.bigImg) and
             (self.bigImg.src != self)
         ):
-            print("# 7")
             if SELECTED is not None:
                 SELECTED.widgetPipeline.toggleOff()
             self.bigImg.disconnectParent()
@@ -945,12 +947,12 @@ class imageFrame(cst.DragableWidget):
     def pipe(self, pipeTrace=None):
         """
         Pipe data to connected children.
-        
+
         Parameters
         ----------
         pipeTrace :     Trace what modifiers has been run through a pipeline.
-                        This is done to make sure no modifier widget can pipe more than once
-                        per pipe "round"
+                        This is done to make sure no modifier widget can pipe
+                        more than once per pipe "round"
 
         """
         if pipeTrace is None:
@@ -992,8 +994,6 @@ class imageFrame(cst.DragableWidget):
         Sets the zoom to make the image automatically fit its frame.
         """
         if not self.isHidden():
-            print("Autofitting")
-            print(self.picdata.shape[1], self.vobject.width())
             w = self.picdata.shape[1] / self.vobject.width()
             h = self.picdata.shape[0] / self.vobject.height()
             if w > h:
@@ -1008,22 +1008,17 @@ class imageFrame(cst.DragableWidget):
                 )
             self.updateZoom()
             self.update_image()
-            print("New zoom:")
-            print(self.z)
 
     def setData(self, data):
         """
         Sets the picData of this image and updates it.
         """
         if data is not None:
-            print("Modified data")
             self.picdata = data
             self.modify()
             if not self.zoomable:
-                print("Case 1")
                 self.autoFit()
             else:
-                print("Case 2")
                 self.update_image()
 
     def erase(self):
@@ -1103,7 +1098,6 @@ class ReferenceImage(wd.QLabel):  # $rfi
         self._parent.select = self
         self._parent.register = self.reference
         # npx = self.piximg.copy().scaledToWidth(384)  # old
-        
         npx = QtGui.QPixmap(self.reference.qimg)
         npx = npx.scaledToWidth(
             480
@@ -1300,10 +1294,6 @@ class Window(wd.QDialog):
 
     def update(self):
         pass
-
-    def selectImg(self, event):
-        k = selectImage()
-        print(k)
 
     def update_on_command(self):
         pass

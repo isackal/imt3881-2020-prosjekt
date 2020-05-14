@@ -5,6 +5,7 @@ import errorhandling as eh
 import imageio as im
 import diffusion as df
 
+
 """
 The following modifiers play an essential role in the interactivity in the
 app, and will therefore be included in the final product.
@@ -38,6 +39,7 @@ def addNoise(img, seed, minVal, maxVal):
 
 def findEdges(img):
     return np.sqrt(df.gX(img)**2 + df.gY(img)**2)/np.sqrt(2)
+
 
 def mosaic_get_green(img):
     # eh.showImageData(img, "input mosaic_get_green")

@@ -1,31 +1,123 @@
 import numpy as np
 from scipy.sparse import spdiags
 from scipy.sparse.linalg import spsolve
+from linalgSolvers import solveAsnRgb
 
 
-def diffuse(u, alpha=0.24, h=0, D=1., rand='n', dr=0):
+def explisittPart(u, h, a):
     """
-    The general diffusion equation, used to
-    diffuse a one-channel-float[0, 1]-image.
+    The right side of a crank nicolson equation, or can be
+    used to diffuse something.
+
+    Parameters
+    ----------
+
+    u       :   <ndarray>
+                image
+
+    h       :   <float>, <ndarray>
+                h part in the poisson equation
+
+    alpha   :   <float>
+                alpha = dt/dx^2, alpha part of the poisson equation
+
+    Returns
+    -------
+
+    <ndarray>
+    image result
     """
+    # Kan senere erstattes med Aslaks diffuse
     u1 = -4*u
     u1[0:-1, :] += u[1:, :]
     u1[1:, :] += u[0:-1, :]
     u1[:, 0:-1] += u[:, 1:]
     u1[:, 1:] += u[:, 0:-1]
-    # Randbetingelser:
-    if rand == 'n':
-        # Neumann condition
-        u1[0, :] += u[0, :]
-        u1[:, 0] += u[:, 0]
-        u1[-1, :] += u[-1, :]
-        u1[:, -1] += u[:, -1]
-    else:
-        u1[0, :] += dr
-        u1[:, 0] += dr
-        u1[-1, :] += dr
-        u1[:, -1] += dr
-    return (u1 * D * alpha + h + u)
+    # Neumann condition
+    u1[0, :] += u[0, :]
+    u1[:, 0] += u[:, 0]
+    u1[-1, :] += u[-1, :]
+    u1[:, -1] += u[:, -1]
+    # return (u1 * a + h * a + u)
+    return u + (u1*a) - (h*a)
+
+
+def directSolve(u, l, dx=1):
+    return solveAsnRgb(
+        4+l*dx*dx,
+        -1,
+        u*l*dx*dx,
+        solver="b"
+    )
+
+
+def poissonImplisitt(
+    u,
+    h=0,
+    alpha=0.2  # Can be very high
+):
+    """
+    Iterative solution of the poisson equation with Implisitt solution.
+    Does one iteration.
+
+    Parameters
+    ----------
+
+    u       :   <ndarray>
+                image
+
+    h       :   <float>, <ndarray>
+                h part in the poisson equation
+
+    alpha   :   <float>
+                alpha = dt/dx^2, alpha part of the poisson equation
+
+    Returns
+    -------
+
+    <ndarray>
+    image result
+    """
+    return solveAsnRgb(
+        4*alpha + 1,
+        -alpha,
+        u - h*alpha
+    )
+
+
+def poissonCrank(
+    u,
+    h=0,
+    alpha=0.4  # Best if alpha < 0.5
+):
+    """
+    Iterative solution of the poisson equation with Crank Nicolson.
+    Does one iteration.
+
+    Parameters
+    ----------
+
+    u       :   <ndarray>
+                image
+
+    h       :   <float>, <ndarray>
+                h part in the poisson equation
+
+    alpha   :   <float>
+                alpha = dt/dx^2, alpha part of the poisson equation
+                should be less than 0,5. 0,5 may be slightly unstable.
+
+    Returns
+    -------
+
+    <ndarray>
+    image result
+    """
+    return solveAsnRgb(
+        2 * alpha + 1,
+        -alpha / 2,
+        explisittPart(u, h, alpha/2)
+    )
 
 
 def gY(img):
@@ -227,13 +319,13 @@ def explicit(u, mask, laplace=0, alpha=0.24, h=0, D=1):
         u[mask] += laplace * alpha * D[mask]
     else:
         u[mask] += laplace * alpha
-    
+
     # Neumann boundary condition du/dt = 0
     u[0, :] = u[1, :]
     u[:, 0] = u[:, 1]
     u[-1, :] = u[-2, :]
     u[:, -1] = u[:, -2]
-    
+
     # only apply h if relevant, else rounding error occurs
     if isinstance(h, np.ndarray):
         return (u - h)
@@ -267,3 +359,24 @@ def implicit(sparse, u, shape):
     u[0::shape[1]] = u[1::shape[1]]
     u[shape[1]-1::shape[1]] = u[shape[1]-2::shape[1]]
     return u
+
+
+if __name__ == "__main__":
+    import imageMath as im
+    import matplotlib.pyplot as plt
+    orig_im = im.read("../testimages/raccoon.jpg")
+    print("Running Crank Poisson")
+    img2 = np.copy(orig_im)
+    for i in range(10):
+        print(i+1)
+        img2 = poissonCrank(img2, alpha=0.49)
+    print("Running Direkte glatting")
+    img1 = directSolve(orig_im, 0.001)
+    print("Running Implisitt Poisson")
+    img3 = poissonImplisitt(orig_im, alpha=1000)
+    plt.imshow(img2)
+    plt.show()
+    plt.imshow(img1)
+    plt.show()
+    plt.imshow(img3)
+    plt.show()

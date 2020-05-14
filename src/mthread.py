@@ -16,10 +16,10 @@ def test2():
         time.sleep(1)
         print("hello world :D")
 
-# t1 = threading.Thread(target=test1, args=())
-# t2 = threading.Thread(target=test2, args=())
-t1 = Process(target=test1, args=())
-t2 = Process(target=test2, args=())
+t1 = threading.Thread(target=test1, args=())
+t2 = threading.Thread(target=test2, args=())
+# t1 = Process(target=test1, args=())
+# t2 = Process(target=test2, args=())
 
 lock = threading.Lock()
 t1.start()
