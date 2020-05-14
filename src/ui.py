@@ -897,7 +897,8 @@ class imageFrame(cst.DragableWidget):
         Selects this image, such that the main display image
         will show its pipeline result.
         """
-        global SELECTED
+        global SELECTED, WINDOW
+        oldSel = SELECTED
         if (
             (self.bigImg is not None) and
             (self != self.bigImg) and
@@ -911,6 +912,9 @@ class imageFrame(cst.DragableWidget):
             self.parent.update_on_command()
             self.widgetPipeline.toggleOn()
             SELECTED = self
+        self.repaint()
+        if oldSel is not None:
+            oldSel.repaint()
 
     def deselectThis(self):
         """
@@ -1044,6 +1048,28 @@ class imageFrame(cst.DragableWidget):
 
     def __del__(self):
         self.onDelete()
+
+    def paintEvent(self, event):
+        global SELECTED
+        """
+        Override paintEvent to display whether this image is
+        selected or not
+        """
+        wd.QWidget.paintEvent(self, event)
+        if SELECTED is self:  # then this is selected
+            # Set brush:
+            painter = QtGui.QPainter(self)
+            color = QtGui.QColor(127, 255, 127, 127)
+            pen = QtGui.QPen(
+                color,
+                8,
+                cr.Qt.SolidLine,
+                cr.Qt.RoundCap,
+                cr.Qt.RoundJoin
+            )
+            painter.setPen(pen)
+            # Draw a rectangle around it
+            painter.drawRect(self.rect())
 
 
 class ReferenceImage(wd.QLabel):  # $rfi
