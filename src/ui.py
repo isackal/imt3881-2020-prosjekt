@@ -49,7 +49,6 @@ MODIFIERS = [
     blurring.Blurring,
     meanimage.Meanimage,
     kbg.KantbevarendeGlatting,
-    kbg.KantDModul,
     ctg.ColorToGray,
     demosaic.Demosaic,
     inpaint.Inpaint,
