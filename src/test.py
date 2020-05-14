@@ -38,7 +38,7 @@ class test_modul(unittest.TestCase):
         self.mask[1:6, 1:6] = 1
         self.alpha = 0.24
 
-        self.img = blurring.blurring(self.img, self.itr, self.mask, self.alpha)
+        self.img = blurring.blurring(self.img, self.itr, self.alpha, self.mask)
 
         self.assertNotAlmostEqual(self.img[3, 3], 0)
         self.assertAlmostEqual(self.img[0, 0], 1)
@@ -103,7 +103,7 @@ class test_modul(unittest.TestCase):
 
         self.blurImg = np.copy(self.img)
         self.blurImg = blurring.blurring(
-            self.blurImg, self.itr, None, self.alpha
+            self.blurImg, self.itr, self.alpha, None
         )
 
         self.img = kantBevGlatting.RGBAKantBevGlatting(
