@@ -2,7 +2,7 @@ import modifiers as md
 import numpy as np
 
 
-def contrast(img, n, k, alpha):
+def contrast(img, n=10, k=5, alpha=0.24):
     """
     Amlpifies the contrast in the picture
 

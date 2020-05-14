@@ -6,4 +6,4 @@ IF EXIST ".coverage" (
 )
 
 coverage run --source=. -m unittest test.py
-coverage html
+coverage html --omit="./ui.py, ./customWidgets.py"
