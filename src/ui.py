@@ -1203,7 +1203,7 @@ class Window(wd.QDialog):
         global WINDOW
         super().__init__()  # inherit from QDialog (aka. window class)
         WINDOW = self
-        self.title = "TODO Name the app"  # Name of the app
+        self.title = "QtRaccon"  # Name of the app
         self.top = 100
         self.left = 100
         self.width = 400

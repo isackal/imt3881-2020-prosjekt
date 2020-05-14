@@ -39,12 +39,13 @@ def blurring(img, itr, alpha, mask, met=0):
         we convert iterations and alpha to a more efficient
         equivelent for crank nicolson
         """
-        _itr = itr // 2
+        _itr = (itr // 2) + 1
         _img = np.copy(img)
 
         alpha = alpha*(1.*itr/_itr)
-        if alpha > 0.4999:
-            alpha = 0.4999
+        while alpha > 0.4999:
+            alpha /= 2
+            _itr *= 2
         for i in range(_itr):
             _img = np.clip(diffusion.poissonCrank(_img, 0, alpha), 0, 1)
         return _img
