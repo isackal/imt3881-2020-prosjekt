@@ -32,19 +32,19 @@ def cloning(img1, img2, n, mask1, mask2, alpha):
     np.ndarray
         Image with amplified contrast
     """
-    img = img1.astype(float) / 255
-    clone_source = img2.astype(float) / 255
+    img = np.copy(img1)
+    clone_source = np.copy(img2)
     new_img = img
 
     # Make a list with the two masks
     mask = list()
-    mask1 = mask1.astype(bool)
+    # mask1 = mask1.astype(bool)
 
     # If only one mask is recieved, clone from the same coords
     if mask2 is None:
         mask = [mask1, mask1]
     else:
-        mask2 = mask2.astype(bool)
+        # mask2 = mask2.astype(bool)
         mask = [mask1, mask2]
 
     # Clear borders of the mask to prevent wrapping
@@ -75,11 +75,11 @@ def cloning(img1, img2, n, mask1, mask2, alpha):
     new_img[new_img < 0] = 0
 
     # Return the correct format
-    new_img = (new_img * 255).astype(np.uint8)
-    alpha_channel = np.full((mask1.shape[0], mask1.shape[1], 1),
-                            255, dtype=np.uint8)
+    # new_img = (new_img * 255).astype(np.uint8)
+    # alpha_channel = np.full((mask1.shape[0], mask1.shape[1], 1),
+    #                        255, dtype=np.uint8)
 
-    return np.append(new_img, alpha_channel, axis=2)
+    return new_img
 
 
 class Cloning(md.Modifier):
@@ -88,11 +88,12 @@ class Cloning(md.Modifier):
         self.name = "Cloning"
         self.function = cloning
         self.params = [
-            ("img1", np.ndarray, None),
-            ("img2", np.ndarray, None),
+            ("img1", np.ndarray, None, md.FORMAT_RGB),
+            ("img2", np.ndarray, None, md.FORMAT_RGB),
             ("iterations", int, 100),
-            ("mask1", np.ndarray, None),
-            ("mask2", np.ndarray, None),
+            ("mask1", np.ndarray, None, md.FORMAT_BOOL),
+            ("mask2", np.ndarray, None, md.FORMAT_BOOL),
             ("alpha", float, 0.24)
         ]
+        self.outputFormat = md.FORMAT_RGB
         self.initDefaultValues()
