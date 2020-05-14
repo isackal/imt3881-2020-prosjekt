@@ -1,5 +1,4 @@
 import numpy as np
-import sys
 
 
 # Enums Format:
@@ -8,6 +7,9 @@ FORMAT_RGB = 1
 FORMAT_BW = 2
 FORMAT_BOOL = 3
 FORMAT_MASK = FORMAT_BOOL
+FORMAT_RED = 4  # Red channel only
+FORMAT_GREEN = 5  # Green channel only
+FORMAT_BLUE = 6  # Blue channel only
 
 # The following enums are prime numbers, such that
 # res = product(enums), if ( res % enum == 0 ) => enum is set
@@ -102,6 +104,12 @@ class Modifier:
                     #   have the same values. This means it only needs to take
                     #   the first channel.
                     _values.append(self.values[j][:, :, 0].astype(float)/255)
+                elif i[3] == 4:  # Red scale image
+                    _values.append(self.values[j][:, :, 0].astype(float)/255)
+                elif i[3] == 5:  # Green scale image
+                    _values.append(self.values[j][:, :, 1].astype(float)/255)
+                elif i[3] == 6:  # Blue scale image
+                    _values.append(self.values[j][:, :, 2].astype(float)/255)
                 else:
                     # Does the same assumtion as above.
                     _values.append(self.values[j][:, :, 0] > 127)

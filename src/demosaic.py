@@ -8,8 +8,9 @@ def demosaic(red, green, blue):
     """
     Inpaints 3 one channel images into one RGB image
 
-    Method assumes a Bayer-like arrangement of pixels "https://en.wikipedia.org/wiki/Bayer_filter"
-    
+    Method assumes a Bayer-like arrangement of pixels
+        "https://en.wikipedia.org/wiki/Bayer_filter"
+
     Paramters
     ---------
     red : numpy.ndarray
@@ -52,8 +53,9 @@ class Demosaic(md.Modifier):
         self.name = "demosaic"
         self.function = demosaic
         self.params = [
-            ("red", np.ndarray, None),
-            ("green", np.ndarray, None),
-            ("blue", np.ndarray, None)
+            ("red", np.ndarray, None, md.FORMAT_RED),
+            ("green", np.ndarray, None, md.FORMAT_GREEN),
+            ("blue", np.ndarray, None, md.FORMAT_BLUE)
         ]
+        self.outputFormat = md.FORMAT_RGB
         self.initDefaultValues()
