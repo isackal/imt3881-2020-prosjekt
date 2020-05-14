@@ -5,6 +5,8 @@ import imageMath as imth
 import errorhandling as eh
 import imageio as im
 
+import matplotlib.pyplot as plt
+
 
 def color_to_gray(u, alpha=0.2, itr=3, _k=1., epsilon=0.0001):
     u0 = u*1
@@ -25,13 +27,11 @@ def color_to_gray(u, alpha=0.2, itr=3, _k=1., epsilon=0.0001):
     cSize = np.sqrt(vx**2 + vy**2)
     vx = length * vx / cSize
     vy = length * vy / cSize
-    # g = (vx, vy)
-    # h = (d/dx)vx + (d/dy)vy
+
     h = df.gX(vx) + df.gY(vy)
     u1 = np.sum(u0, axis=2) / 3  # Initial case
-    # u1 = np.sqrt(np.sum(u0**2, axis=2))/_max  # vector ish
 
-    u1 = df.pre_diffuse(u1, alpha=0.24, h=(h*_k), itr=3)
+    u1 = df.pre_diffuse(u1, alpha=0.24, h=(h*_k), itr=itr)
     return np.clip(u1, 0, 1)
 
 
@@ -53,4 +53,5 @@ class ColorToGray(md.Modifier):
 if __name__ == "__main__":
     img = im.imread("../hdr-bilder/Ocean/Ocean_02048.png").astype(float)/255
     gray = color_to_gray(img)
-    eh.showImageData(gray, "hmmmm")
+    plt.imshow(gray, plt.cm.gray)
+    plt.show()
