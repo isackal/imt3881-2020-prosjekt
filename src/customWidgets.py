@@ -2,8 +2,7 @@ from PyQt5 import QtGui
 import PyQt5.QtWidgets as wd
 import PyQt5.QtCore as cr
 from time import time
-from threading import Thread, Lock
-import sys
+from threading import Lock
 
 
 def noFunction(*args, **qwargs):  # This function is a place holder function.
@@ -120,7 +119,7 @@ class NumericInput(wd.QLineEdit):
         if (
             (event.pos() - self.dragStartPosition).manhattanLength() <
             wd.QApplication.startDragDistance()
-        ): # If outside of scope
+        ):  # If outside of scope
             return
         # Determine value change:
         newTime = time()
@@ -242,7 +241,7 @@ class Packlist(wd.QWidget):
 
         wid :   <QWidget>
                 widget to be added
-        
+
         idx :   <int>
                 index of where to insert the widget
         """
@@ -409,7 +408,7 @@ class IndexedButton(wd.QPushButton):
 
         reference   :   <ReferenceValue>
                         holding a reference Value
-        
+
         parent      :   <QWidget>
                         Parent of button
         """
@@ -438,7 +437,7 @@ class OptionsDialog(wd.QDialog):  # $sid
 
         txt     :   <string>
                     text to be displayed in the dialog
-        
+
         options :   <list>
                     a list of strings, or options
 
@@ -484,7 +483,6 @@ class OptionsDialog(wd.QDialog):  # $sid
             self.reject()
         else:
             self.accept()
-            print(self.selectedIndex.get())
 
 
 class Progression(wd.QDialog):
@@ -494,7 +492,7 @@ class Progression(wd.QDialog):
     """
     def __init__(self, _max=1, txt="Progress"):
         super().__init__()
-        self.p = 0 # Progression
+        self.p = 0  # Progression
         self.pMax = _max  # max Progression
         self.finished = 0  # 0 to 1, how much is finished?
         self.lock = Lock()  # Lock (mutex) used when accessing its resources.
@@ -514,7 +512,7 @@ class Progression(wd.QDialog):
         self.lock.acquire()
         self.finished = self.p/self.pMax
         self.lock.release()
-    
+
     def initUI(self):
         vlayout = wd.QVBoxLayout()
         self.setLayout(vlayout)
@@ -534,6 +532,7 @@ class Progression(wd.QDialog):
         self.pbar.setValue(self.finished*100)
         if (self.finished > 0.999):
             self.accept()
+
 
 # Float validator using regex expression
 FloatValidator = QtGui.QRegExpValidator(cr.QRegExp(r"[-]?\d+[.]?\d*"))
