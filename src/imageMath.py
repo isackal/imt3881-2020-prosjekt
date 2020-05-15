@@ -72,6 +72,9 @@ def mosaic_get(img, r, g, b):
 
 
 def mask_rand(u):
+    """
+    Finds the outer edges of a mask and returns it.
+    """
     u1 = np.copy(u)
     u1[0:-1, :] += u[1:, :]
     u1[1:, :] += u[0:-1, :]
@@ -93,6 +96,18 @@ def normalize(img):
     newimg = img*1
     newimg[:, :, :3] = img[:, :, :3]*k
     return newimg
+
+
+def crop(img, x, y, width, height):
+    while x < 0:
+        x += img.shape[1]
+    while y < 0:
+        y += img.shape[0]
+    if x + width >= img.shape[1]:
+        width = img.shape[1] - 1 - x
+    if y + height >= img.shape[0]:
+        height = img.shape[0] - 1 - y
+    return img[y:y+height, x:x+width, :]
 
 
 def weightedAddition(img1, img2, weight, ignoreTransparency):
@@ -433,4 +448,19 @@ class FindEdges(md.Modifier):
             ("source", np.ndarray, None, md.FORMAT_RGB)
         ]
         self.outputFormat = md.FORMAT_RGB
+        self.initDefaultValues()
+
+class Crop(md.Modifier):
+    def __init__(self):
+        super().__init__()
+        self.name = "Crop"
+        self.function = crop
+        self.params = [
+            ("source", np.ndarray, None, md.FORMAT_RGBA),
+            ("x", int, 0),
+            ("y", int, 0),
+            ("width", int, 32),
+            ("height", int, 32)
+        ]
+        self.outputFormat = md.FORMAT_RGBA
         self.initDefaultValues()
