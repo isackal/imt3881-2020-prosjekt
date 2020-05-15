@@ -23,7 +23,7 @@ import kantBevGlatting as kbg
 import colortogray as ctg
 import demosaic
 import inpaint
-# import anonymiser  # temporary overlapping library bug on mac
+import anonymiser  # temporary overlapping library bug on mac
 import cloning
 # import poisson
 
