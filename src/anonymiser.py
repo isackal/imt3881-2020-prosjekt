@@ -5,7 +5,6 @@ import modifiers as md
 from colortogray import color_to_gray
 import diffusion
 
-import matplotlib.pyplot as plt
 
 def circularMask(w, h, epsilon=0.05):
     """
@@ -70,7 +69,6 @@ def anonymisering(img, itr, alpha):
     # More important to ensure everything that needs to be blurred is blurred.
 
     for (x, y, w, h) in faces:
-        print("Faces")
         mask[y:y+int(1.1*h), x:x+w] += circularMask(int(1.1*h), w)
 
     # Mark all places where ML algorithm think there is an eye
