@@ -37,7 +37,7 @@ MODIFIERS = [
     ctg.ColorToGray,
     demosaic.Demosaic,
     inpaint.Inpaint,
-    # anonymiser.Anonymisering,
+    anonymiser.Anonymisering,
     cloning.Cloning,
     imageMath.WeightedAddition,
     imageMath.FitSize,
