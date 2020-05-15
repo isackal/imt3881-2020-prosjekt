@@ -23,7 +23,7 @@ import kantBevGlatting as kbg
 import colortogray as ctg
 import demosaic
 import inpaint
-import anonymiser  # temporary overlapping library bug on mac
+# import anonymiser
 import cloning
 # import poisson
 
@@ -37,7 +37,7 @@ MODIFIERS = [
     ctg.ColorToGray,
     demosaic.Demosaic,
     inpaint.Inpaint,
-    anonymiser.Anonymisering,
+    # anonymiser.Anonymisering,
     cloning.Cloning,
     imageMath.WeightedAddition,
     imageMath.FitSize,
