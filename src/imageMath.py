@@ -15,12 +15,17 @@ noise to images to test different smoothing methods.
 
 
 def rgbaFormat(o_image):
-    if o_image.shape[2] == 4:
+    if len(o_image.shape) == 2:
+        _image = np.ones((o_image.shape[0], o_image.shape[1], 4)) * 255
+        for i in range(3):
+            _image[:, :, i] = o_image
+        return _image.astype(np.uint8)
+    elif o_image.shape[2] == 4:
         return o_image.astype(np.uint8)
     else:
         _image = np.ones((o_image.shape[0], o_image.shape[1], 4)) * 255
         for i in range(3):
-            _image[:, :, i] = o_image[:, :, i]  # RED
+            _image[:, :, i] = o_image[:, :, i]
         return _image.astype(np.uint8)
 
 
