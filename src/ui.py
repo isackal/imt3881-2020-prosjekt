@@ -29,6 +29,16 @@ import cloning
 
 # List of modifiers that are being used
 MODIFIERS = [
+    bitcrusher.Bitcrusher,
+    contrast.Contrast,
+    blurring.Blurring,
+    meanimage.Meanimage,
+    kbg.KantbevarendeGlatting,
+    ctg.ColorToGray,
+    demosaic.Demosaic,
+    inpaint.Inpaint,
+    # anonymiser.Anonymisering,
+    cloning.Cloning,
     imageMath.WeightedAddition,
     imageMath.FitSize,
     imageMath.Offset,
@@ -44,16 +54,7 @@ MODIFIERS = [
     imageMath.Mosaic,
     imageMath.Noise,
     imageMath.FindEdges,
-    bitcrusher.Bitcrusher,
-    contrast.Contrast,
-    blurring.Blurring,
-    meanimage.Meanimage,
-    kbg.KantbevarendeGlatting,
-    ctg.ColorToGray,
-    demosaic.Demosaic,
-    inpaint.Inpaint,
-    # anonymiser.Anonymisering,
-    cloning.Cloning
+    imageMath.Crop
 ]
 
 _NUMBERED_IMAGE = 0  # used for defualt naming of images
