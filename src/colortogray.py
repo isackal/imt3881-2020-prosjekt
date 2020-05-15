@@ -52,6 +52,6 @@ class ColorToGray(md.Modifier):
 
 if __name__ == "__main__":
     img = im.imread("../hdr-bilder/Ocean/Ocean_02048.png").astype(float)/255
-    gray = color_to_gray(img)
+    gray = color_to_gray(img, _k=5)
     plt.imshow(gray, plt.cm.gray)
     plt.show()

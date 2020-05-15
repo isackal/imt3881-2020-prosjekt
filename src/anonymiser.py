@@ -5,6 +5,7 @@ import modifiers as md
 from colortogray import color_to_gray
 import diffusion
 
+import matplotlib.pyplot as plt
 
 def circularMask(w, h, epsilon=0.05):
     """
@@ -69,6 +70,7 @@ def anonymisering(img, itr, alpha):
     # More important to ensure everything that needs to be blurred is blurred.
 
     for (x, y, w, h) in faces:
+        print("Faces")
         mask[y:y+int(1.1*h), x:x+w] += circularMask(int(1.1*h), w)
 
     # Mark all places where ML algorithm think there is an eye
@@ -78,18 +80,18 @@ def anonymisering(img, itr, alpha):
     # Looks for 2 eyes in a close region to eachother, increases Recall
     # (Less blurring of regions which are not actually faces)
     for (x, y, w, h) in eyes:
+
         # Create a rectangle around a potential eye
-        top = int(max(0, y-(0.2*h)))
+        top = int(max(0, y-(0.8*h)))
         bottom = int(min(size[0], y+h))
-        left = int(max(0, x-(1.2*w)))
-        right = int(min(size[1], x+(2.2*w)))
+        left = int(max(0, x-(3*w)))
+        right = int(min(size[1], x+(2.5*w)))
 
         # Find out how many values are true in the region
         eyesDetected = np.argwhere(mask[top:bottom, left:right])
 
         # If it found another eye in the region create a mask to anonymize
         if(eyesDetected.shape[0] == 2):
-
             # Find midpoint between the eyes
             top += int((eyesDetected[0, 0] + eyesDetected[1, 0])*.5)
             left += int((eyesDetected[0, 1] + eyesDetected[1, 1])*.5)
@@ -118,7 +120,6 @@ def anonymisering(img, itr, alpha):
             mask[y, x] = False
 
     # Return image after a blurring process is run in regions where faces are.
-
     return diffusion.pre_diffuse(img, mask, alpha=alpha, itr=itr)
 
 

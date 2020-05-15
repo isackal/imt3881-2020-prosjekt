@@ -281,7 +281,7 @@ def pre_diffuse(u, mask=None, met='e', alpha=0.24, itr=50, h=0, D=1):
         view = view.reshape(shape)
         mask = mask.reshape(shape[:2])
 
-        u1[top:bottom, left:right] = new_view
+    u1[top:bottom, left:right] = new_view
 
     return u1
 
