@@ -128,8 +128,9 @@ class Anonymisering(md.Modifier):
         self.name = "Anonymisering"
         self.function = anonymisering
         self.params = [
-            ("img", np.ndarray, None),
+            ("img", np.ndarray, None, md.FORMAT_RGB),
             ("itr", int, 100),
             ("alpha", float, 0.24)
         ]
+        self.outputFormat = md.FORMAT_RGB
         self.initDefaultValues()
